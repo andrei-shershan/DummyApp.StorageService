@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DummyApp.StorageService.WebApi/DummyApp.StorageService.WebApi.csproj" />
+  </Folder>
+</Solution>
