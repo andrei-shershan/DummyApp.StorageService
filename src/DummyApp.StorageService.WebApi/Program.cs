@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,20 +11,10 @@ var authConfig = builder.Configuration.GetSection("Authentication");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
     {
-        var authority = authConfig["Authority"];
-        var metadataAddress = authConfig["MetadataAddress"];
-
-        // Authority is the token issuer visible to clients.
-        // MetadataAddress may point to the internal Docker service address for container-to-container discovery.
-        options.Authority = authority;
-        if (!string.IsNullOrEmpty(metadataAddress))
-        {
-            options.MetadataAddress = metadataAddress;
-        }
-
-        options.RequireHttpsMetadata = authority?.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ?? false;
+        options.Authority = authConfig["Authority"];
+        options.RequireHttpsMetadata = true;
         options.TokenValidationParameters.ValidateAudience = false; // TODO: In production, validate audience and scopes as needed
-        options.TokenValidationParameters.ValidIssuer = authority;
+        options.TokenValidationParameters.ValidIssuer = authConfig["Authority"];
     });
 builder.Services.AddAuthorization(options =>
 {
@@ -49,6 +40,18 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+var forwardedOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+};
+if (builder.Configuration.GetValue<bool>("ReverseProxy:TrustAllProxies"))
+{
+    // Dev only: trust all proxies inside the Docker network (Traefik).
+    // Do NOT enable in production.
+    forwardedOptions.KnownNetworks.Clear();
+    forwardedOptions.KnownProxies.Clear();
+}
+app.UseForwardedHeaders(forwardedOptions);
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
