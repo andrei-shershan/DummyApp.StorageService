@@ -13,8 +13,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     {
         options.Authority = authConfig["Authority"];
         options.RequireHttpsMetadata = true;
-        options.TokenValidationParameters.ValidateAudience = false; // TODO: In production, validate audience and scopes as needed
-        options.TokenValidationParameters.ValidIssuer = authConfig["Authority"];
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateAudience = true,
+            ValidAudience = authConfig["Audience"],
+            ValidateIssuer = true,
+            ValidIssuer = authConfig["Authority"]
+        };
     });
 builder.Services.AddAuthorization(options =>
 {
