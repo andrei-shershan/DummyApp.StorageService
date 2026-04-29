@@ -1,4 +1,5 @@
 using System.Linq;
+using DummyApp.StorageService.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,6 +9,12 @@ namespace DummyApp.StorageService.WebApi.Controllers
     [Route("api/test")]
     public class TestController : ControllerBase
     {
+        private readonly StorageDbContext _db;
+
+        public TestController(StorageDbContext db)
+        {
+            _db = db;
+        }
         [HttpGet("testA")]
         [AllowAnonymous]
         public IActionResult GetAnonymous() => Ok(new { message = "StorageService API testA OK" });
@@ -26,7 +33,18 @@ namespace DummyApp.StorageService.WebApi.Controllers
         {
             if (HasScope("storage.write"))
             {
-                return Ok(new { message = "StorageService API testX: write access granted" });
+                var message = _db.Messages
+                    .Where(m => m.MessageTypeId == 1)
+                    .OrderBy(m => m.Id)
+                    .Select(m => new { m.Id, m.Text, m.MessageTypeId })
+                    .FirstOrDefault();
+
+                if (message == null)
+                {
+                    return NotFound(new { error = "No message found with MessageTypeId = 1" });
+                }
+
+                return Ok(message);
             }
 
             if (HasScope("storage.read"))
