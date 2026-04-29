@@ -1,6 +1,8 @@
 using Azure.Identity;
+using DummyApp.StorageService.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +19,28 @@ if (!builder.Environment.IsDevelopment())
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+var databaseSection = builder.Configuration.GetSection("Database");
+var useInMemoryDb = databaseSection.GetValue<bool?>("UseInMemory") ?? true;
+var connectionString = databaseSection.GetValue<string>("ConnectionString");
+
+builder.Services.AddDbContext<StorageDbContext>(options =>
+{
+    if (useInMemoryDb)
+    {
+        options.UseInMemoryDatabase("StorageDb");
+    }
+    else
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException("Database connection string is required when Database:UseInMemory is false.");
+        }
+
+        options.UseMySQL(connectionString, sqlOptions => sqlOptions.MigrationsAssembly("DummyApp.StorageService.Data"));
+    }
+});
+
 var authConfig = builder.Configuration.GetSection("Authentication");
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -49,6 +73,19 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<StorageDbContext>();
+    if (db.Database.IsRelational())
+    {
+        db.Database.Migrate();
+    }
+    else
+    {
+        db.Database.EnsureCreated();
+    }
+}
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())

@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/DummyApp.StorageService.WebApi/DummyApp.StorageService.WebApi.csproj" />
+    <Project Path="src/DummyApp.StorageService.Data/DummyApp.StorageService.Data.csproj" />
   </Folder>
 </Solution>

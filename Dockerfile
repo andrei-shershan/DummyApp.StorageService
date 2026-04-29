@@ -15,6 +15,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["src/DummyApp.StorageService.WebApi/DummyApp.StorageService.WebApi.csproj", "src/DummyApp.StorageService.WebApi/"]
+COPY ["src/DummyApp.StorageService.Data/DummyApp.StorageService.Data.csproj", "src/DummyApp.StorageService.Data/"]
 RUN dotnet restore "./src/DummyApp.StorageService.WebApi/DummyApp.StorageService.WebApi.csproj"
 COPY . .
 WORKDIR "/src/src/DummyApp.StorageService.WebApi"
