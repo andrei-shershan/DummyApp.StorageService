@@ -1,3 +1,4 @@
+using DummyApp.StorageService.Data.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace DummyApp.StorageService.Data;
@@ -11,6 +12,7 @@ public sealed class StorageDbContext : DbContext
 
     public DbSet<Message> Messages { get; set; } = null!;
     public DbSet<MessageType> MessageTypes { get; set; } = null!;
+    public DbSet<Artwork> Artworks { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -46,6 +48,30 @@ public sealed class StorageDbContext : DbContext
                 .WithMany(t => t.Messages)
                 .HasForeignKey(m => m.MessageTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Artwork>(entity =>
+        {
+            entity.ToTable("Artworks");
+            entity.HasKey(a => a.Id);
+            entity.Property(a => a.CreatorId)
+                .IsRequired();
+            entity.Property(a => a.Name)
+                .IsRequired()
+                .HasMaxLength(50);
+            entity.Property(a => a.Description)
+                .HasMaxLength(255);
+            entity.Property(a => a.CreationDate)
+                .IsRequired();
+            entity.Property(a => a.UploadDate)
+                .IsRequired();
+            entity.Property(a => a.ImgUrl)
+                .IsRequired()
+                .HasMaxLength(2000);
+            entity.Property(a => a.SmallImgUrl)
+                .HasMaxLength(2000);
+            entity.Property(a => a.IsActive)
+                .IsRequired();
         });
     }
 }

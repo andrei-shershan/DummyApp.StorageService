@@ -1,5 +1,6 @@
 using Azure.Identity;
 using DummyApp.StorageService.Data;
+using DummyApp.StorageService.WebApi.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +20,7 @@ if (!builder.Environment.IsDevelopment())
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddScoped<IArtworkService, ArtworkService>();
 
 var databaseSection = builder.Configuration.GetSection("Database");
 var useInMemoryDb = databaseSection.GetValue<bool?>("UseInMemory") ?? true;
@@ -67,6 +69,11 @@ builder.Services.AddAuthorization(options =>
 
     options.AddPolicy("RequireStorageWrite", policy =>
         policy.RequireClaim("scope", "storage.write").RequireAuthenticatedUser());
+
+    options.AddPolicy("CreateArtwork", policy =>
+        policy.RequireAssertion(context =>
+            context.User.Identity?.IsAuthenticated == true &&
+            (context.User.HasClaim("role", "Creator") || context.User.HasClaim("scope", "storage.write"))));
 });
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
