@@ -22,7 +22,7 @@ if (!builder.Environment.IsDevelopment())
 builder.Services.AddControllers();
 builder.Services.AddScoped<IArtworkService, ArtworkService>();
 
-var databaseSection = builder.Configuration.GetSection("Database");
+var databaseSection = builder.Configuration.GetSection("Infrastructure:Databases:Storage");
 var useInMemoryDb = databaseSection.GetValue<bool?>("UseInMemory") ?? true;
 var connectionString = databaseSection.GetValue<string>("ConnectionString");
 
@@ -43,19 +43,17 @@ builder.Services.AddDbContext<StorageDbContext>(options =>
     }
 });
 
-var authConfig = builder.Configuration.GetSection("Authentication");
-
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
     {
-        options.Authority = authConfig["Authority"];
+        options.Authority = builder.Configuration["IdentityServer:Authority"];
         options.RequireHttpsMetadata = true;
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
         {
             ValidateAudience = true,
-            ValidAudience = authConfig["Audience"],
+            ValidAudience = builder.Configuration["IdentityServer:Audience"],
             ValidateIssuer = true,
-            ValidIssuer = authConfig["Authority"]
+            ValidIssuer = builder.Configuration["IdentityServer:Authority"]
         };
     });
 builder.Services.AddAuthorization(options =>
