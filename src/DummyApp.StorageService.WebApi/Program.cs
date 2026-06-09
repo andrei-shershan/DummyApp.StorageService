@@ -89,7 +89,20 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<StorageDbContext>();
     if (db.Database.IsRelational())
     {
-        db.Database.Migrate();
+        var retries = 10;
+        while (true)
+        {
+            try
+            {
+                db.Database.Migrate();
+                break;
+            }
+            catch (MySql.Data.MySqlClient.MySqlException ex) when (retries-- > 0)
+            {
+                app.Logger.LogWarning("DB not ready ({Message}), retrying in 3s… ({Retries} left)", ex.Message, retries);
+                Thread.Sleep(3000);
+            }
+        }
     }
     else
     {

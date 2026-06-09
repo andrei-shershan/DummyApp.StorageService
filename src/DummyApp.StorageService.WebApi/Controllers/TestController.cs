@@ -33,18 +33,7 @@ namespace DummyApp.StorageService.WebApi.Controllers
         {
             if (HasScope("storage.write"))
             {
-                var message = _db.Messages
-                    .Where(m => m.MessageTypeId == 1)
-                    .OrderBy(m => m.Id)
-                    .Select(m => new { m.Id, m.Text, m.MessageTypeId })
-                    .FirstOrDefault();
-
-                if (message == null)
-                {
-                    return NotFound(new { error = "No message found with MessageTypeId = 1" });
-                }
-
-                return Ok(message);
+                return Ok(new { message = "StorageService API testX: write access granted" });
             }
 
             if (HasScope("storage.read"))

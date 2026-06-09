@@ -42,6 +42,14 @@ public class ArtworksController : ControllerBase
         return CreatedAtAction(nameof(GetArtworkById), new { id = artwork.Id }, artwork);
     }
 
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> GetArtworks()
+    {
+        var artworks = await _artworkService.GetAllArtworksAsync();
+        return Ok(artworks);
+    }
+
     [HttpGet("{id}")]
     [Authorize]
     public async Task<IActionResult> GetArtworkById(int id)

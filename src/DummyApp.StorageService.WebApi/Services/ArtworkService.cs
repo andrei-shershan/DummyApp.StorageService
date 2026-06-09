@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using DummyApp.StorageService.Data;
 using DummyApp.StorageService.Data.Models;
@@ -32,6 +33,7 @@ public sealed class ArtworkService : IArtworkService
         {
             CreatorId = creatorId,
             Name = request.Name.Trim(),
+            PublicName = request.PublicName?.Trim() ?? string.Empty,
             Description = request.Description?.Trim() ?? string.Empty,
             CreationDate = request.CreationDate,
             UploadDate = DateTime.UtcNow,
@@ -51,5 +53,12 @@ public sealed class ArtworkService : IArtworkService
         return await _dbContext.Artworks
             .AsNoTracking()
             .FirstOrDefaultAsync(a => a.Id == id);
+    }
+
+    public async Task<IReadOnlyList<Artwork>> GetAllArtworksAsync()
+    {
+        return await _dbContext.Artworks
+            .AsNoTracking()
+            .ToListAsync();
     }
 }
