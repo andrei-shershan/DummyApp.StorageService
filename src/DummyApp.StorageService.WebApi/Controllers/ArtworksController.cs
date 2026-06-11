@@ -28,16 +28,8 @@ public class ArtworksController : ControllerBase
         {
             return BadRequest(ModelState);
         }
-
-        var creatorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            ?? User.FindFirst("sub")?.Value;
-
-        if (string.IsNullOrWhiteSpace(creatorId))
-        {
-            return Forbid();
-        }
-
-        var artwork = await _artworkService.CreateArtworkAsync(creatorId, request);
+        
+        var artwork = await _artworkService.CreateArtworkAsync(request);
 
         return CreatedAtAction(nameof(GetArtworkById), new { id = artwork.Id }, artwork);
     }

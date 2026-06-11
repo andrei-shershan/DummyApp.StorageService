@@ -7,7 +7,7 @@ namespace DummyApp.StorageService.WebApi.Services;
 
 public interface IArtworkService
 {
-    Task<Artwork> CreateArtworkAsync(string creatorId, CreateArtworkRequest request);
+    Task<Artwork> CreateArtworkAsync(CreateArtworkRequest request);
     Task<Artwork?> GetArtworkByIdAsync(int id);
     Task<IReadOnlyList<Artwork>> GetAllArtworksAsync();
 }

@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using DummyApp.StorageService.Data;
 using DummyApp.StorageService.Data.Models;
 using DummyApp.StorageService.WebApi.Models;
@@ -17,13 +14,8 @@ public sealed class ArtworkService : IArtworkService
         _dbContext = dbContext;
     }
 
-    public async Task<Artwork> CreateArtworkAsync(string creatorId, CreateArtworkRequest request)
+    public async Task<Artwork> CreateArtworkAsync(CreateArtworkRequest request)
     {
-        if (string.IsNullOrWhiteSpace(creatorId))
-        {
-            throw new ArgumentException("CreatorId is required.", nameof(creatorId));
-        }
-
         if (string.IsNullOrWhiteSpace(request.Name))
         {
             throw new ArgumentException("Artwork name is required.", nameof(request.Name));
@@ -31,7 +23,7 @@ public sealed class ArtworkService : IArtworkService
 
         var artwork = new Artwork
         {
-            CreatorId = creatorId,
+            CreatorId = request.CreatorId,
             Name = request.Name.Trim(),
             PublicName = request.PublicName?.Trim() ?? string.Empty,
             Description = request.Description?.Trim() ?? string.Empty,
