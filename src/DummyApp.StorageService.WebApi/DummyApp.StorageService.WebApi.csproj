@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DummyApp.StorageService.Data\DummyApp.StorageService.Data.csproj" />
+    <ProjectReference Include="..\DummyApp.StorageService.Infrastructure\DummyApp.StorageService.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
