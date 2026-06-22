@@ -18,12 +18,11 @@ public sealed class GetArtworkByIdAsyncTests : ArtworkServiceTestsBase
         {
             CreatorId = "creator-2",
             Name = "Existing artwork",
-            PublicName = "Public name",
             Description = "Description",
             CreationDate = new DateTime(2024, 1, 1),
             UploadDate = DateTime.UtcNow,
             ImgUrl = "https://example.com/img.jpg",
-            SmallImgUrl = "https://example.com/small.jpg",
+            ThumbnailUrl = "https://example.com/small.jpg",
             IsActive = true
         });
         await context.SaveChangesAsync();

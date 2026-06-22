@@ -31,12 +31,11 @@ public sealed class CreateArtworkAsyncTests : ArtworkServiceTestsBase
         {
             CreatorId = "creator-1",
             Name = "Artwork name",
-            PublicName = "Public name",
             Description = "Description",
             CreationDate = new DateTime(2024, 1, 1),
             UploadDate = DateTime.UtcNow,
             ImgUrl = "https://example.com/img.jpg",
-            SmallImgUrl = "https://example.com/small.jpg",
+            ThumbnailUrl = "https://example.com/small.jpg",
             IsActive = true
         };
 
@@ -45,12 +44,11 @@ public sealed class CreateArtworkAsyncTests : ArtworkServiceTestsBase
         Assert.NotNull(result);
         Assert.Equal(request.CreatorId, result!.CreatorId);
         Assert.Equal(request.Name.Trim(), result.Name);
-        Assert.Equal(request.PublicName.Trim(), result.PublicName);
         Assert.Equal(request.Description.Trim(), result.Description);
         Assert.Equal(request.CreationDate, result.CreationDate);
         Assert.Equal(request.UploadDate, result.UploadDate);
         Assert.Equal(request.ImgUrl.Trim(), result.ImgUrl);
-        Assert.Equal(request.SmallImgUrl.Trim(), result.SmallImgUrl);
+        Assert.Equal(request.ThumbnailUrl.Trim(), result.ThumbnailUrl);
         Assert.Equal(request.IsActive, result.IsActive);
         Assert.NotEqual(0, result.Id);
     }
