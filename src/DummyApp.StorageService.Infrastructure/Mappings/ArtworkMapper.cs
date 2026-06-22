@@ -12,12 +12,11 @@ internal static class ArtworkMapper
             Id = artwork.Id,
             CreatorId = artwork.CreatorId,
             Name = artwork.Name,
-            PublicName = artwork.PublicName,
             Description = artwork.Description,
             CreationDate = artwork.CreationDate,
             UploadDate = artwork.UploadDate,
             ImgUrl = artwork.ImgUrl,
-            SmallImgUrl = artwork.SmallImgUrl,
+            ThumbnailUrl = artwork.ThumbnailUrl,
             IsActive = artwork.IsActive
         };
     }
@@ -28,12 +27,11 @@ internal static class ArtworkMapper
         {
             CreatorId = request.CreatorId,
             Name = request.Name.Trim(),
-            PublicName = request.PublicName?.Trim() ?? string.Empty,
             Description = request.Description?.Trim() ?? string.Empty,
             CreationDate = request.CreationDate,
             UploadDate = request.UploadDate == default ? DateTime.UtcNow : request.UploadDate,
             ImgUrl = request.ImgUrl?.Trim() ?? string.Empty,
-            SmallImgUrl = request.SmallImgUrl?.Trim() ?? string.Empty,
+            ThumbnailUrl = request.ThumbnailUrl?.Trim() ?? string.Empty,
             IsActive = request.IsActive
         };
     }

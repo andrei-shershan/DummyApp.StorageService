@@ -50,7 +50,7 @@ namespace DummyApp.StorageService.Data.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("SmallImgUrl")
+                    b.Property<string>("ThumbnailUrl")
                         .IsRequired()
                         .HasColumnType("longtext");
 

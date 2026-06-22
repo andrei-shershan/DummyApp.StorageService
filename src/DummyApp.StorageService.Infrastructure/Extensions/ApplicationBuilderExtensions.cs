@@ -17,20 +17,8 @@ public static class ApplicationBuilderExtensions
         var db = scope.ServiceProvider.GetRequiredService<StorageDbContext>();
         if (db.Database.IsRelational())
         {
-            var retries = 10;
-            while (true)
-            {
-                try
-                {
-                    db.Database.Migrate();
-                    break;
-                }
-                catch (MySql.Data.MySqlClient.MySqlException ex) when (retries-- > 0)
-                {
-                    app.Logger.LogWarning("DB not ready ({Message}), retrying in 3s… ({Retries} left)", ex.Message, retries);
-                    Thread.Sleep(3000);
-                }
-            }
+            EnsureDatabaseInitialized(db, app.Logger);
+            db.Database.Migrate();
         }
         else
         {
@@ -38,6 +26,25 @@ public static class ApplicationBuilderExtensions
         }
 
         return app;
+    }
+
+    private static void EnsureDatabaseInitialized(StorageDbContext db, ILogger logger)
+    {
+        var retries = 10;
+        while (true)
+        {
+            try
+            {
+                db.Database.OpenConnection();
+                db.Database.CloseConnection();
+                break;
+            }
+            catch (MySql.Data.MySqlClient.MySqlException ex) when (retries-- > 0)
+            {
+                logger.LogWarning(ex, "Database not ready, retrying in 10s… ({Retries} attempts left)", retries);
+                Thread.Sleep(10000);
+            }
+        }
     }
 
     public static WebApplication UseStorageServicePipeline(this WebApplication app)

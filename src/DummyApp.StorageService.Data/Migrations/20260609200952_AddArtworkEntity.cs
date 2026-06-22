@@ -24,7 +24,7 @@ namespace DummyApp.StorageService.Data.Migrations
                     CreationDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UploadDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     ImgUrl = table.Column<string>(type: "longtext", nullable: false),
-                    SmallImgUrl = table.Column<string>(type: "longtext", nullable: false),
+                    ThumbnailUrl = table.Column<string>(type: "longtext", nullable: false),
                     IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
                 constraints: table =>
