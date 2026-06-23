@@ -1,3 +1,4 @@
+using System.Linq;
 using DummyApp.StorageService.Data;
 using DummyApp.StorageService.Infrastructure.Mappings;
 using DummyApp.StorageService.Infrastructure.Models;
@@ -55,6 +56,20 @@ public sealed class ArtworkService : IArtworkService
             .FirstOrDefaultAsync(a => a.Id == id);
 
         return artwork?.ToDto();
+    }
+
+    public async Task<IEnumerable<ArtworkDto>> GetArtworksByCreatorIdAsync(string creatorId)
+    {
+        if (string.IsNullOrWhiteSpace(creatorId))
+        {
+            return Array.Empty<ArtworkDto>();
+        }
+
+        return await _dbContext.Artworks
+            .AsNoTracking()
+            .Where(a => a.CreatorId == creatorId)
+            .Select(a => a.ToDto())
+            .ToListAsync();
     }
 
     public async Task<IEnumerable<ArtworkDto>> GetAllArtworksAsync()

@@ -52,6 +52,21 @@ public class ArtworksController : ControllerBase
         return Ok(artworks ?? Array.Empty<ArtworkDto>());
     }
 
+    [HttpGet("creator/{creatorId}")]
+    [Authorize]
+    [ProducesResponseType(typeof(IEnumerable<ArtworkDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IEnumerable<ArtworkDto>>> GetArtworksByCreatorId([FromRoute] string creatorId)
+    {
+        if (string.IsNullOrWhiteSpace(creatorId))
+        {
+            return BadRequest("CreatorId is required.");
+        }
+
+        var artworks = await _artworkService.GetArtworksByCreatorIdAsync(creatorId);
+        return Ok(artworks ?? Array.Empty<ArtworkDto>());
+    }
+
     [HttpGet("{id}")]
     [Authorize]
     [ProducesResponseType(typeof(ArtworkDto), StatusCodes.Status200OK)]
