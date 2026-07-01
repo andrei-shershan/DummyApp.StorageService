@@ -14,7 +14,7 @@ public sealed class GetArtworkByIdTests
     {
         var expected = new ArtworkDto { Id = 1, Name = "Art 1" };
         var artworkService = new Mock<IArtworkService>();
-        artworkService.Setup(x => x.GetArtworkByIdAsync(1))
+        artworkService.Setup(x => x.GetArtworkByIdAsync(1, true))
             .ReturnsAsync(expected);
 
         var controller = new ArtworksController(artworkService.Object);
@@ -29,7 +29,7 @@ public sealed class GetArtworkByIdTests
     public async Task WhenArtworkDoesNotExist_ReturnsNotFound()
     {
         var artworkService = new Mock<IArtworkService>();
-        artworkService.Setup(x => x.GetArtworkByIdAsync(1))
+        artworkService.Setup(x => x.GetArtworkByIdAsync(1, true))
             .ReturnsAsync((ArtworkDto?)null);
 
         var controller = new ArtworksController(artworkService.Object);
