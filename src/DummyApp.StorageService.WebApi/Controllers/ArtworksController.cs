@@ -46,24 +46,9 @@ public class ArtworksController : ControllerBase
     [HttpGet]
     [Authorize]
     [ProducesResponseType(typeof(IEnumerable<ArtworkDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<ArtworkDto>>> GetArtworks()
+    public async Task<ActionResult<IEnumerable<ArtworkDto>>> GetArtworks([FromQuery] string? creatorId, [FromQuery] bool? isActive)
     {
-        var artworks = await _artworkService.GetAllArtworksAsync();
-        return Ok(artworks ?? Array.Empty<ArtworkDto>());
-    }
-
-    [HttpGet("creator/{creatorId}")]
-    [Authorize]
-    [ProducesResponseType(typeof(IEnumerable<ArtworkDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<IEnumerable<ArtworkDto>>> GetArtworksByCreatorId([FromRoute] string creatorId)
-    {
-        if (string.IsNullOrWhiteSpace(creatorId))
-        {
-            return BadRequest("CreatorId is required.");
-        }
-
-        var artworks = await _artworkService.GetArtworksByCreatorIdAsync(creatorId);
+        var artworks = await _artworkService.GetArtworksAsync(creatorId, isActive);
         return Ok(artworks ?? Array.Empty<ArtworkDto>());
     }
 
@@ -71,9 +56,9 @@ public class ArtworksController : ControllerBase
     [Authorize]
     [ProducesResponseType(typeof(ArtworkDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ArtworkDto>> GetArtworkById([FromRoute] int id)
+    public async Task<ActionResult<ArtworkDto>> GetArtworkById([FromRoute] int id, [FromQuery] bool activeOnly = true)
     {
-        var artwork = await _artworkService.GetArtworkByIdAsync(id);
+        var artwork = await _artworkService.GetArtworkByIdAsync(id, activeOnly);
         if (artwork == null)
         {
             return NotFound();

@@ -49,33 +49,34 @@ public sealed class ArtworkService : IArtworkService
         return artwork.ToDto();
     }
 
-    public async Task<ArtworkDto?> GetArtworkByIdAsync(int id)
+    public async Task<ArtworkDto?> GetArtworkByIdAsync(int id, bool activeOnly = true)
     {
-        var artwork = await _dbContext.Artworks
-            .AsNoTracking()
-            .FirstOrDefaultAsync(a => a.Id == id);
+        var query = _dbContext.Artworks.AsNoTracking().Where(a => a.Id == id);
 
+        if (activeOnly)
+        {
+            query = query.Where(a => a.IsActive);
+        }
+
+        var artwork = await query.FirstOrDefaultAsync();
         return artwork?.ToDto();
     }
 
-    public async Task<IEnumerable<ArtworkDto>> GetArtworksByCreatorIdAsync(string creatorId)
+    public async Task<IEnumerable<ArtworkDto>> GetArtworksAsync(string? creatorId = null, bool? isActive = null)
     {
-        if (string.IsNullOrWhiteSpace(creatorId))
+        var query = _dbContext.Artworks.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(creatorId))
         {
-            return Array.Empty<ArtworkDto>();
+            query = query.Where(a => a.CreatorId == creatorId);
         }
 
-        return await _dbContext.Artworks
-            .AsNoTracking()
-            .Where(a => a.CreatorId == creatorId)
-            .Select(a => a.ToDto())
-            .ToListAsync();
-    }
+        if (isActive.HasValue)
+        {
+            query = query.Where(a => a.IsActive == isActive.Value);
+        }
 
-    public async Task<IEnumerable<ArtworkDto>> GetAllArtworksAsync()
-    {
-        return await _dbContext.Artworks
-            .AsNoTracking()
+        return await query
             .Select(a => a.ToDto())
             .ToListAsync();
     }
