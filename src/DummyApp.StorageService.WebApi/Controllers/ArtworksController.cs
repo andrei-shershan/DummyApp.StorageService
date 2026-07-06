@@ -68,6 +68,40 @@ public class ArtworksController : ControllerBase
         return Ok(artwork);
     }
 
+    [HttpPut("{id}")]
+    [Authorize(Policy = "EditArtwork")]
+    [ProducesResponseType(typeof(ArtworkDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ArtworkDto>> UpdateArtwork([FromRoute] int id, [FromBody] UpdateArtworkDto request)
+    {
+        if (request is null)
+        {
+            return BadRequest("Artwork request is required.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var existingArtwork = await _artworkService.GetArtworkByIdAsync(id, activeOnly: false);
+        if (existingArtwork is null)
+        {
+            return NotFound();
+        }
+
+        var updatedArtwork = await _artworkService.UpdateArtworkAsync(id, request);
+        if (updatedArtwork is null)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, "Unable to update artwork.");
+        }
+
+        return Ok(updatedArtwork);
+    }
+
     [HttpPut("{id}/active")]
     [Authorize(Policy = "CreateArtwork")]
     [ProducesResponseType(typeof(ArtworkDto), StatusCodes.Status200OK)]
