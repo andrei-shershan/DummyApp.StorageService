@@ -1,3 +1,5 @@
+using DummyApp.StorageService.Infrastructure.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DummyApp.StorageService.Infrastructure.Extensions;
@@ -8,7 +10,7 @@ public static class AuthorizationExtensions
     {
         services.AddAuthorization(options =>
         {
-            options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+            options.FallbackPolicy = new AuthorizationPolicyBuilder()
                 .RequireAuthenticatedUser()
                 .Build();
 
@@ -22,7 +24,12 @@ public static class AuthorizationExtensions
                 policy.RequireAssertion(context =>
                     context.User.Identity?.IsAuthenticated == true &&
                     (context.User.HasClaim("role", "Creator") || context.User.HasClaim("scope", "storage.write"))));
+
+            options.AddPolicy("EditArtwork", policy =>
+                policy.Requirements.Add(new EditArtworkRequirement()));
         });
+
+        services.AddScoped<IAuthorizationHandler, EditArtworkAuthorizationHandler>();
 
         return services;
     }
