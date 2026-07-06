@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using DummyApp.StorageService.Infrastructure.Models;
 using DummyApp.StorageService.Infrastructure.Services;
 using DummyApp.StorageService.WebApi.Controllers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Xunit;
@@ -38,4 +40,5 @@ public sealed class GetArtworkByIdTests
 
         Assert.IsType<NotFoundResult>(result.Result);
     }
+
 }

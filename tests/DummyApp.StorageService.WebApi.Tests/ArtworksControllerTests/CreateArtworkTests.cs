@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using DummyApp.StorageService.Infrastructure.Models;
 using DummyApp.StorageService.Infrastructure.Services;
 using DummyApp.StorageService.WebApi.Controllers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -73,4 +75,5 @@ public sealed class CreateArtworkTests
         Assert.Equal(expected.Id, ((dynamic)createdResult.RouteValues!)![("id")]);
         Assert.Equal(expected, createdResult.Value);
     }
+
 }

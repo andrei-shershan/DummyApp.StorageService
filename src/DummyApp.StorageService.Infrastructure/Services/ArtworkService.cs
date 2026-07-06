@@ -62,6 +62,101 @@ public sealed class ArtworkService : IArtworkService
         return artwork?.ToDto();
     }
 
+    public async Task<ArtworkDto?> UpdateArtworkAsync(int id, UpdateArtworkDto request)
+    {
+        if (request is null)
+        {
+            _logger.LogError("Artwork update request is null.");
+            return null;
+        }
+
+        var artwork = await _dbContext.Artworks.FindAsync(id);
+        if (artwork is null)
+        {
+            return null;
+        }
+
+        if (request.Name is not null)
+        {
+            artwork.Name = request.Name.Trim();
+        }
+
+        if (request.Description is not null)
+        {
+            artwork.Description = request.Description.Trim();
+        }
+
+        if (request.CreationDate.HasValue)
+        {
+            artwork.CreationDate = request.CreationDate.Value;
+        }
+
+        if (request.UploadDate.HasValue)
+        {
+            artwork.UploadDate = request.UploadDate.Value;
+        }
+
+        if (request.ImgUrl is not null)
+        {
+            artwork.ImgUrl = request.ImgUrl.Trim();
+        }
+
+        if (request.ThumbnailUrl is not null)
+        {
+            artwork.ThumbnailUrl = request.ThumbnailUrl.Trim();
+        }
+
+        if (request.IsActive.HasValue)
+        {
+            artwork.IsActive = request.IsActive.Value;
+        }
+
+        try
+        {
+            await _dbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Failed to save updated artwork to database.");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while updating artwork.");
+            return null;
+        }
+
+        return artwork.ToDto();
+    }
+
+    public async Task<ArtworkDto?> UpdateArtworkIsActiveAsync(int id, bool isActive)
+    {
+        var artwork = await _dbContext.Artworks.FindAsync(id);
+        if (artwork is null)
+        {
+            return null;
+        }
+
+        artwork.IsActive = isActive;
+
+        try
+        {
+            await _dbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Failed to save artwork active state to database.");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while updating artwork active state.");
+            return null;
+        }
+
+        return artwork.ToDto();
+    }
+
     public async Task<IEnumerable<ArtworkDto>> GetArtworksAsync(string? creatorId = null, bool? isActive = null)
     {
         var query = _dbContext.Artworks.AsNoTracking();
