@@ -16,7 +16,7 @@ public sealed class GetArtworksTests
     {
         var expected = new[]
         {
-            new ArtworkDto { Id = 1, Name = "Art 1" },
+            new ArtworkDto { Id = Guid.NewGuid(), Name = "Art 1" },
             new ArtworkDto { Id = 2, Name = "Art 2" }
         };
 
@@ -38,7 +38,7 @@ public sealed class GetArtworksTests
         var creatorId = "creator-1";
         var expected = new[]
         {
-            new ArtworkDto { Id = 1, CreatorId = creatorId, Name = "Art 1" },
+            new ArtworkDto { Id = Guid.NewGuid(), CreatorId = creatorId, Name = "Art 1" },
             new ArtworkDto { Id = 2, CreatorId = creatorId, Name = "Art 2" }
         };
 
