@@ -57,7 +57,7 @@ public class ArtworksController : ControllerBase
     [Authorize]
     [ProducesResponseType(typeof(ArtworkDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ArtworkDto>> GetArtworkById([FromRoute] int id, [FromQuery] bool activeOnly = true)
+    public async Task<ActionResult<ArtworkDto>> GetArtworkById([FromRoute] Guid id, [FromQuery] bool activeOnly = true)
     {
         var artwork = await _artworkService.GetArtworkByIdAsync(id, activeOnly);
         if (artwork == null)
@@ -75,7 +75,7 @@ public class ArtworksController : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ArtworkDto>> UpdateArtwork([FromRoute] int id, [FromBody] UpdateArtworkDto request)
+    public async Task<ActionResult<ArtworkDto>> UpdateArtwork([FromRoute] Guid id, [FromBody] UpdateArtworkDto request)
     {
         if (request is null)
         {
@@ -109,7 +109,7 @@ public class ArtworksController : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ArtworkDto>> UpdateArtworkIsActive([FromRoute] int id, [FromBody] UpdateArtworkIsActiveRequest request)
+    public async Task<ActionResult<ArtworkDto>> UpdateArtworkIsActive([FromRoute] Guid id, [FromBody] UpdateArtworkIsActiveRequest request)
     {
         if (request is null)
         {

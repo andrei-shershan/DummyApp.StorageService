@@ -26,12 +26,12 @@ public sealed class EditArtworkAuthorizationFilter : IAsyncAuthorizationFilter
             return;
         }
 
-        int artworkId;
-        if (idValue is int idInt)
+        Guid artworkId;
+        if (idValue is Guid idGuid)
         {
-            artworkId = idInt;
+            artworkId = idGuid;
         }
-        else if (idValue is string idString && int.TryParse(idString, out var parsedId))
+        else if (idValue is string idString && Guid.TryParse(idString, out var parsedId))
         {
             artworkId = parsedId;
         }

@@ -49,7 +49,7 @@ public sealed class ArtworkService : IArtworkService
         return artwork.ToDto();
     }
 
-    public async Task<ArtworkDto?> GetArtworkByIdAsync(int id, bool activeOnly = true)
+    public async Task<ArtworkDto?> GetArtworkByIdAsync(Guid id, bool activeOnly = true)
     {
         var query = _dbContext.Artworks.AsNoTracking().Where(a => a.Id == id);
 
@@ -62,7 +62,7 @@ public sealed class ArtworkService : IArtworkService
         return artwork?.ToDto();
     }
 
-    public async Task<ArtworkDto?> UpdateArtworkAsync(int id, UpdateArtworkDto request)
+    public async Task<ArtworkDto?> UpdateArtworkAsync(Guid id, UpdateArtworkDto request)
     {
         if (request is null)
         {
@@ -129,7 +129,7 @@ public sealed class ArtworkService : IArtworkService
         return artwork.ToDto();
     }
 
-    public async Task<ArtworkDto?> UpdateArtworkIsActiveAsync(int id, bool isActive)
+    public async Task<ArtworkDto?> UpdateArtworkIsActiveAsync(Guid id, bool isActive)
     {
         var artwork = await _dbContext.Artworks.FindAsync(id);
         if (artwork is null)

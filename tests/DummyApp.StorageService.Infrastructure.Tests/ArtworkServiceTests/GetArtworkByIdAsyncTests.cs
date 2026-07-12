@@ -14,7 +14,7 @@ public sealed class GetArtworkByIdAsyncTests : ArtworkServiceTestsBase
         await using var context = CreateContext("GetArtworkByIdAsync_WhenArtworkExists");
         var loggerMock = new Mock<ILogger<ArtworkService>>();
         var service = CreateService(context, loggerMock.Object);
-        context.Artworks.Add(new Artwork
+        var artwork = new Artwork
         {
             CreatorId = "creator-2",
             Name = "Existing artwork",
@@ -24,13 +24,14 @@ public sealed class GetArtworkByIdAsyncTests : ArtworkServiceTestsBase
             ImgUrl = "https://example.com/img.jpg",
             ThumbnailUrl = "https://example.com/small.jpg",
             IsActive = true
-        });
+        };
+        context.Artworks.Add(artwork);
         await context.SaveChangesAsync();
 
-        var result = await service.GetArtworkByIdAsync(1, true);
+        var result = await service.GetArtworkByIdAsync(artwork.Id, true);
 
         Assert.NotNull(result);
-        Assert.Equal(1, result!.Id);
+        Assert.Equal(artwork.Id, result!.Id);
         Assert.Equal("Existing artwork", result.Name);
     }
 
@@ -53,10 +54,24 @@ public sealed class GetArtworkByIdAsyncTests : ArtworkServiceTestsBase
         });
         await context.SaveChangesAsync();
 
-        var result = await service.GetArtworkByIdAsync(1, false);
+        var artwork = new Artwork
+        {
+            CreatorId = "creator-2",
+            Name = "Inactive artwork",
+            Description = "Description",
+            CreationDate = new DateTime(2024, 1, 1),
+            UploadDate = DateTime.UtcNow,
+            ImgUrl = "https://example.com/img.jpg",
+            ThumbnailUrl = "https://example.com/small.jpg",
+            IsActive = false
+        };
+        context.Artworks.Add(artwork);
+        await context.SaveChangesAsync();
+
+        var result = await service.GetArtworkByIdAsync(artwork.Id, false);
 
         Assert.NotNull(result);
-        Assert.Equal(1, result!.Id);
+        Assert.Equal(artwork.Id, result!.Id);
         Assert.Equal("Inactive artwork", result.Name);
     }
 
@@ -67,7 +82,7 @@ public sealed class GetArtworkByIdAsyncTests : ArtworkServiceTestsBase
         var loggerMock = new Mock<ILogger<ArtworkService>>();
         var service = CreateService(context, loggerMock.Object);
 
-        var result = await service.GetArtworkByIdAsync(999, true);
+        var result = await service.GetArtworkByIdAsync(Guid.NewGuid(), true);
 
         Assert.Null(result);
     }

@@ -16,7 +16,8 @@ public sealed class UpdateArtworkIsActiveTests
         var artworkService = new Mock<IArtworkService>();
         var controller = new ArtworksController(artworkService.Object);
 
-        var result = await controller.UpdateArtworkIsActive(1, null!);
+        var artworkId = Guid.NewGuid();
+        var result = await controller.UpdateArtworkIsActive(artworkId, null!);
 
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
         Assert.Equal("Artwork request is required.", badRequest.Value);
@@ -26,12 +27,13 @@ public sealed class UpdateArtworkIsActiveTests
     public async Task WhenArtworkDoesNotExist_ReturnsNotFound()
     {
         var artworkService = new Mock<IArtworkService>();
-        artworkService.Setup(x => x.GetArtworkByIdAsync(1, false)).ReturnsAsync((ArtworkDto?)null);
+        var artworkId = Guid.NewGuid();
+        artworkService.Setup(x => x.GetArtworkByIdAsync(artworkId, false)).ReturnsAsync((ArtworkDto?)null);
 
         var controller = new ArtworksController(artworkService.Object);
         var request = new UpdateArtworkIsActiveRequest { IsActive = true };
 
-        var result = await controller.UpdateArtworkIsActive(1, request);
+        var result = await controller.UpdateArtworkIsActive(artworkId, request);
 
         Assert.IsType<NotFoundResult>(result.Result);
     }
@@ -39,15 +41,16 @@ public sealed class UpdateArtworkIsActiveTests
     [Fact]
     public async Task WhenServiceReturnsNull_ReturnsInternalServerError()
     {
-        var existingArtwork = new ArtworkDto { Id = 1, CreatorId = "creator-1", Name = "Old" };
+        var artworkId = Guid.NewGuid();
+        var existingArtwork = new ArtworkDto { Id = artworkId, CreatorId = "creator-1", Name = "Old" };
         var artworkService = new Mock<IArtworkService>();
-        artworkService.Setup(x => x.GetArtworkByIdAsync(1, false)).ReturnsAsync(existingArtwork);
-        artworkService.Setup(x => x.UpdateArtworkIsActiveAsync(1, true)).ReturnsAsync((ArtworkDto?)null);
+        artworkService.Setup(x => x.GetArtworkByIdAsync(artworkId, false)).ReturnsAsync(existingArtwork);
+        artworkService.Setup(x => x.UpdateArtworkIsActiveAsync(artworkId, true)).ReturnsAsync((ArtworkDto?)null);
 
         var controller = new ArtworksController(artworkService.Object);
         var request = new UpdateArtworkIsActiveRequest { IsActive = true };
 
-        var result = await controller.UpdateArtworkIsActive(1, request);
+        var result = await controller.UpdateArtworkIsActive(artworkId, request);
 
         var statusResult = Assert.IsType<ObjectResult>(result.Result);
         Assert.Equal(500, statusResult.StatusCode);
@@ -57,17 +60,18 @@ public sealed class UpdateArtworkIsActiveTests
     [Fact]
     public async Task WhenUpdateSucceeds_ReturnsOkWithArtwork()
     {
-        var existingArtwork = new ArtworkDto { Id = 1, CreatorId = "creator-1", Name = "Old" };
-        var updatedArtwork = new ArtworkDto { Id = 1, CreatorId = "creator-1", Name = "Old", IsActive = true };
+        var artworkId = Guid.NewGuid();
+        var existingArtwork = new ArtworkDto { Id = artworkId, CreatorId = "creator-1", Name = "Old" };
+        var updatedArtwork = new ArtworkDto { Id = artworkId, CreatorId = "creator-1", Name = "Old", IsActive = true };
 
         var artworkService = new Mock<IArtworkService>();
-        artworkService.Setup(x => x.GetArtworkByIdAsync(1, false)).ReturnsAsync(existingArtwork);
-        artworkService.Setup(x => x.UpdateArtworkIsActiveAsync(1, true)).ReturnsAsync(updatedArtwork);
+        artworkService.Setup(x => x.GetArtworkByIdAsync(artworkId, false)).ReturnsAsync(existingArtwork);
+        artworkService.Setup(x => x.UpdateArtworkIsActiveAsync(artworkId, true)).ReturnsAsync(updatedArtwork);
 
         var controller = new ArtworksController(artworkService.Object);
         var request = new UpdateArtworkIsActiveRequest { IsActive = true };
 
-        var result = await controller.UpdateArtworkIsActive(1, request);
+        var result = await controller.UpdateArtworkIsActive(artworkId, request);
 
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
         Assert.Equal(updatedArtwork, okResult.Value);

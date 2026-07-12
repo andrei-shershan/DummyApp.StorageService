@@ -44,7 +44,7 @@ public sealed class EditArtworkAuthorizationHandler : AuthorizationHandler<EditA
             _ => idValue?.ToString() ?? string.Empty
         };
 
-        if (!int.TryParse(idString, out var artworkId))
+        if (!Guid.TryParse(idString, out var artworkId))
         {
             return;
         }

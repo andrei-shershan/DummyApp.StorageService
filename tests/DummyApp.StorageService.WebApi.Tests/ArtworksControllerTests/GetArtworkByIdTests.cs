@@ -14,14 +14,15 @@ public sealed class GetArtworkByIdTests
     [Fact]
     public async Task WhenArtworkExists_ReturnsOkWithArtwork()
     {
-        var expected = new ArtworkDto { Id = 1, Name = "Art 1" };
+        var artworkId = Guid.NewGuid();
+        var expected = new ArtworkDto { Id = artworkId, Name = "Art 1" };
         var artworkService = new Mock<IArtworkService>();
-        artworkService.Setup(x => x.GetArtworkByIdAsync(1, true))
+        artworkService.Setup(x => x.GetArtworkByIdAsync(artworkId, true))
             .ReturnsAsync(expected);
 
         var controller = new ArtworksController(artworkService.Object);
 
-        var result = await controller.GetArtworkById(1);
+        var result = await controller.GetArtworkById(artworkId);
 
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
         Assert.Equal(expected, okResult.Value);
@@ -30,13 +31,14 @@ public sealed class GetArtworkByIdTests
     [Fact]
     public async Task WhenArtworkDoesNotExist_ReturnsNotFound()
     {
+        var artworkId = Guid.NewGuid();
         var artworkService = new Mock<IArtworkService>();
-        artworkService.Setup(x => x.GetArtworkByIdAsync(1, true))
+        artworkService.Setup(x => x.GetArtworkByIdAsync(artworkId, true))
             .ReturnsAsync((ArtworkDto?)null);
 
         var controller = new ArtworksController(artworkService.Object);
 
-        var result = await controller.GetArtworkById(1);
+        var result = await controller.GetArtworkById(artworkId);
 
         Assert.IsType<NotFoundResult>(result.Result);
     }

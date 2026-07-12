@@ -60,7 +60,7 @@ public sealed class CreateArtworkTests
     [Fact]
     public async Task WhenArtworkCreated_ReturnsCreatedAtAction()
     {
-        var expected = new ArtworkDto { Id = 1, Name = "Test" };
+        var expected = new ArtworkDto { Id = Guid.NewGuid(), Name = "Test" };
         var artworkService = new Mock<IArtworkService>();
         artworkService.Setup(x => x.CreateArtworkAsync(It.IsAny<ArtworkDto>()))
             .ReturnsAsync(expected);
