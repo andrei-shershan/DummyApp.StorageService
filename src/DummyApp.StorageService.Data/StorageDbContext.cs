@@ -23,5 +23,16 @@ public sealed class StorageDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<Artwork>(entity =>
+        {
+            entity.Property(a => a.Description)
+                .IsRequired()
+                .HasMaxLength(1000);
+
+            entity.Property(a => a.Name)
+                .IsRequired()
+                .HasMaxLength(100);
+        });
     }
 }
