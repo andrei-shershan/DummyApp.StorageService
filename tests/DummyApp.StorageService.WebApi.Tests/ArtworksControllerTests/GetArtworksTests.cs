@@ -17,7 +17,7 @@ public sealed class GetArtworksTests
         var expected = new[]
         {
             new ArtworkDto { Id = Guid.NewGuid(), Name = "Art 1" },
-            new ArtworkDto { Id = 2, Name = "Art 2" }
+            new ArtworkDto { Id = Guid.NewGuid(), Name = "Art 2" }
         };
 
         var artworkService = new Mock<IArtworkService>();
@@ -39,7 +39,7 @@ public sealed class GetArtworksTests
         var expected = new[]
         {
             new ArtworkDto { Id = Guid.NewGuid(), CreatorId = creatorId, Name = "Art 1" },
-            new ArtworkDto { Id = 2, CreatorId = creatorId, Name = "Art 2" }
+            new ArtworkDto { Id = Guid.NewGuid(), CreatorId = creatorId, Name = "Art 2" }
         };
 
         var artworkService = new Mock<IArtworkService>();

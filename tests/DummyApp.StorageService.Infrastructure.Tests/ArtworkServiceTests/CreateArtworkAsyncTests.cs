@@ -50,6 +50,6 @@ public sealed class CreateArtworkAsyncTests : ArtworkServiceTestsBase
         Assert.Equal(request.ImgUrl.Trim(), result.ImgUrl);
         Assert.Equal(request.ThumbnailUrl.Trim(), result.ThumbnailUrl);
         Assert.Equal(request.IsActive, result.IsActive);
-        Assert.NotEqual(0, result.Id);
+        Assert.NotEqual(Guid.Empty, result.Id);
     }
 }
