@@ -1,5 +1,4 @@
-﻿using DummyApp.StorageService.Infrastructure.Models;
-using DummyApp.StorageService.Infrastructure.Services;
+﻿using DummyApp.StorageService.Infrastructure.Models;using DummyApp.StorageService.Infrastructure.Models;using DummyApp.StorageService.Infrastructure.Services;
 using DummyApp.StorageService.WebApi.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,7 +18,6 @@ public class ArtworksController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = "CreateArtwork")]
     [ProducesResponseType(typeof(ArtworkDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -45,7 +43,6 @@ public class ArtworksController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize]
     [ProducesResponseType(typeof(IEnumerable<ArtworkDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<ArtworkDto>>> GetArtworks([FromQuery] string? creatorId, [FromQuery] bool? isActive)
     {
@@ -54,7 +51,6 @@ public class ArtworksController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    [Authorize]
     [ProducesResponseType(typeof(ArtworkDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ArtworkDto>> GetArtworkById([FromRoute] Guid id, [FromQuery] bool activeOnly = true)
@@ -69,7 +65,6 @@ public class ArtworksController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Policy = "EditArtwork")]
     [ProducesResponseType(typeof(ArtworkDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -103,7 +98,6 @@ public class ArtworksController : ControllerBase
     }
 
     [HttpPut("{id}/active")]
-    [Authorize(Policy = "CreateArtwork")]
     [ProducesResponseType(typeof(ArtworkDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

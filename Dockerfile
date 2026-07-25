@@ -5,6 +5,15 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 # Install mkcert root CA so the container trusts *.dummy.localhost certificates
 COPY certs/rootCA.pem /usr/local/share/ca-certificates/mkcert-ca.crt
 RUN update-ca-certificates
+
+# Install vsdbg for container attach debugging
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl ca-certificates \
+    && mkdir -p /vsdbg \
+    && curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg \
+    && rm -rf /var/lib/apt/lists/*
+
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080

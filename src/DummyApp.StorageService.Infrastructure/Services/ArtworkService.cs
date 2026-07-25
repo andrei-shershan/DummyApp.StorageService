@@ -1,5 +1,7 @@
 using System.Linq;
 using DummyApp.StorageService.Data;
+using DummyApp.StorageService.Data.Models;
+using DummyApp.StorageService.Infrastructure.Authorization;
 using DummyApp.StorageService.Infrastructure.Mappings;
 using DummyApp.StorageService.Infrastructure.Models;
 using Microsoft.EntityFrameworkCore;
@@ -51,16 +53,20 @@ public sealed class ArtworkService : IArtworkService
 
     public async Task<ArtworkDto?> GetArtworkByIdAsync(Guid id, bool activeOnly = true)
     {
-        var query = _dbContext.Artworks.AsNoTracking().Where(a => a.Id == id);
-
-        if (activeOnly)
+        var artwork = await _dbContext.Artworks.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id);
+        if (artwork is null)
         {
-            query = query.Where(a => a.IsActive);
+            return null;
         }
 
-        var artwork = await query.FirstOrDefaultAsync();
-        return artwork?.ToDto();
+        if (activeOnly && !artwork.IsActive)
+        {
+            return null;
+        }
+
+        return artwork.ToDto();
     }
+
 
     public async Task<ArtworkDto?> UpdateArtworkAsync(Guid id, UpdateArtworkDto request)
     {
