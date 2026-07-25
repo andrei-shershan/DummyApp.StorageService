@@ -13,4 +13,5 @@ public sealed record ArtworkDto
     public string ImgUrl { get; init; } = string.Empty;
     public string ThumbnailUrl { get; init; } = string.Empty;
     public bool IsActive { get; init; }
+    public string? SeriesName { get; init; }
 }
