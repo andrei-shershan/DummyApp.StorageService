@@ -13,4 +13,6 @@ public sealed class Artwork
     public string ImgUrl { get; set; } = string.Empty;
     public string ThumbnailUrl { get; set; } = string.Empty;
     public bool IsActive { get; set; }
+    public Guid? SeriesId { get; set; }
+    public Series? Series { get; set; }
 }

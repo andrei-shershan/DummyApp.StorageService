@@ -29,6 +29,19 @@ public sealed class ArtworkService : IArtworkService
         }
 
         var artwork = request.ToEntity();
+
+        if (!string.IsNullOrWhiteSpace(request.SeriesName))
+        {
+            var series = await GetOrCreateSeriesAsync(request.CreatorId, request.SeriesName);
+            if (series is null)
+            {
+                _logger.LogError("Failed to resolve series {SeriesName} for creator {CreatorId}.", request.SeriesName, request.CreatorId);
+                return null;
+            }
+
+            artwork.SeriesId = series.Id;
+        }
+
         _dbContext.Artworks.Add(artwork);
 
         try
@@ -51,9 +64,148 @@ public sealed class ArtworkService : IArtworkService
         return artwork.ToDto();
     }
 
+    public async Task<IEnumerable<SeriesDto>> GetSeriesByCreatorAsync(string creatorId)
+    {
+        if (string.IsNullOrWhiteSpace(creatorId))
+        {
+            return Array.Empty<SeriesDto>();
+        }
+
+        return await _dbContext.Series
+            .AsNoTracking()
+            .Where(s => s.CreatorId == creatorId)
+            .OrderBy(s => s.Name)
+            .Select(s => new SeriesDto
+            {
+                Id = s.Id,
+                CreatorId = s.CreatorId,
+                Name = s.Name
+            })
+            .ToListAsync();
+    }
+
+    public async Task<SeriesDto?> CreateSeriesAsync(string creatorId, string name)
+    {
+        if (string.IsNullOrWhiteSpace(creatorId))
+        {
+            _logger.LogError("Series create request does not contain creator id.");
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            _logger.LogError("Series create request does not contain a valid name.");
+            return null;
+        }
+
+        var normalizedName = name.Trim();
+        var existingSeries = await _dbContext.Series
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.CreatorId == creatorId && s.Name == normalizedName);
+
+        if (existingSeries is not null)
+        {
+            return new SeriesDto
+            {
+                Id = existingSeries.Id,
+                CreatorId = existingSeries.CreatorId,
+                Name = existingSeries.Name
+            };
+        }
+
+        var series = new Series
+        {
+            CreatorId = creatorId,
+            Name = normalizedName
+        };
+
+        _dbContext.Series.Add(series);
+
+        try
+        {
+            await _dbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            _dbContext.Entry(series).State = EntityState.Detached;
+            _logger.LogError(ex, "Failed to save series to database.");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _dbContext.Entry(series).State = EntityState.Detached;
+            _logger.LogError(ex, "Unexpected error while creating series.");
+            return null;
+        }
+
+        return new SeriesDto
+        {
+            Id = series.Id,
+            CreatorId = series.CreatorId,
+            Name = series.Name
+        };
+    }
+
+    private async Task<SeriesDto?> GetOrCreateSeriesAsync(string creatorId, string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return null;
+        }
+
+        var normalizedName = name.Trim();
+        var existingSeries = await _dbContext.Series
+            .FirstOrDefaultAsync(s => s.CreatorId == creatorId && s.Name == normalizedName);
+
+        if (existingSeries is not null)
+        {
+            return new SeriesDto
+            {
+                Id = existingSeries.Id,
+                CreatorId = existingSeries.CreatorId,
+                Name = existingSeries.Name
+            };
+        }
+
+        var series = new Series
+        {
+            CreatorId = creatorId,
+            Name = normalizedName
+        };
+
+        _dbContext.Series.Add(series);
+
+        try
+        {
+            await _dbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            _dbContext.Entry(series).State = EntityState.Detached;
+            _logger.LogError(ex, "Failed to save series to database.");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _dbContext.Entry(series).State = EntityState.Detached;
+            _logger.LogError(ex, "Unexpected error while creating series.");
+            return null;
+        }
+
+        return new SeriesDto
+        {
+            Id = series.Id,
+            CreatorId = series.CreatorId,
+            Name = series.Name
+        };
+    }
+
     public async Task<ArtworkDto?> GetArtworkByIdAsync(Guid id, bool activeOnly = true)
     {
-        var artwork = await _dbContext.Artworks.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id);
+        var artwork = await _dbContext.Artworks
+            .AsNoTracking()
+            .Include(a => a.Series)
+            .FirstOrDefaultAsync(a => a.Id == id);
         if (artwork is null)
         {
             return null;
@@ -165,7 +317,9 @@ public sealed class ArtworkService : IArtworkService
 
     public async Task<IEnumerable<ArtworkDto>> GetArtworksAsync(string? creatorId = null, bool? isActive = null)
     {
-        var query = _dbContext.Artworks.AsNoTracking();
+        IQueryable<Artwork> query = _dbContext.Artworks
+            .AsNoTracking()
+            .Include(a => a.Series);
 
         if (!string.IsNullOrWhiteSpace(creatorId))
         {
