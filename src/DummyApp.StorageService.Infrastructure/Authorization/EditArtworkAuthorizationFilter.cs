@@ -41,7 +41,7 @@ public sealed class EditArtworkAuthorizationFilter : IAsyncAuthorizationFilter
             return;
         }
 
-        var artwork = await _artworkService.GetArtworkByIdAsync(artworkId, activeOnly: false);
+        var artwork = await _artworkService.GetArtworkByIdAsync(artworkId, false);
         if (artwork is null)
         {
             context.Result = new NotFoundResult();

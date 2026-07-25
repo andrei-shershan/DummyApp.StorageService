@@ -1,4 +1,6 @@
 using DummyApp.StorageService.Data.Models;
+using DummyApp.StorageService.Infrastructure.Authorization;
+using DummyApp.StorageService.Infrastructure.Models;
 using DummyApp.StorageService.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -8,52 +10,47 @@ namespace DummyApp.StorageService.Infrastructure.Tests;
 
 public sealed class GetArtworkByIdAsyncTests : ArtworkServiceTestsBase
 {
-    [Fact]
-    public async Task WhenArtworkExists_ReturnsArtwork()
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    public async Task WhenActiveOnlyTrue_ReturnsOnlyActiveArtwork(bool isActive, bool expectedFound)
     {
-        await using var context = CreateContext("GetArtworkByIdAsync_WhenArtworkExists");
+        await using var context = CreateContext("GetArtworkByIdAsync_WhenActiveOnlyTrue");
         var loggerMock = new Mock<ILogger<ArtworkService>>();
         var service = CreateService(context, loggerMock.Object);
         var artwork = new Artwork
         {
             CreatorId = "creator-2",
-            Name = "Existing artwork",
+            Name = "Artwork",
             Description = "Description",
             CreationDate = new DateTime(2024, 1, 1),
             UploadDate = DateTime.UtcNow,
             ImgUrl = "https://example.com/img.jpg",
             ThumbnailUrl = "https://example.com/small.jpg",
-            IsActive = true
+            IsActive = isActive
         };
         context.Artworks.Add(artwork);
         await context.SaveChangesAsync();
 
         var result = await service.GetArtworkByIdAsync(artwork.Id, true);
 
-        Assert.NotNull(result);
-        Assert.Equal(artwork.Id, result!.Id);
-        Assert.Equal("Existing artwork", result.Name);
+        if (expectedFound)
+        {
+            Assert.NotNull(result);
+            Assert.Equal(artwork.Id, result!.Id);
+        }
+        else
+        {
+            Assert.Null(result);
+        }
     }
 
     [Fact]
-    public async Task WhenInactiveArtworkAndActiveOnlyFalse_ReturnsArtwork()
+    public async Task WhenActiveOnlyFalseAndArtworkInactive_ReturnsArtwork()
     {
-        await using var context = CreateContext("GetArtworkByIdAsync_WhenInactiveArtworkActiveOnlyFalse");
+        await using var context = CreateContext("GetArtworkByIdAsync_WhenActiveOnlyFalse");
         var loggerMock = new Mock<ILogger<ArtworkService>>();
         var service = CreateService(context, loggerMock.Object);
-        context.Artworks.Add(new Artwork
-        {
-            CreatorId = "creator-2",
-            Name = "Inactive artwork",
-            Description = "Description",
-            CreationDate = new DateTime(2024, 1, 1),
-            UploadDate = DateTime.UtcNow,
-            ImgUrl = "https://example.com/img.jpg",
-            ThumbnailUrl = "https://example.com/small.jpg",
-            IsActive = false
-        });
-        await context.SaveChangesAsync();
-
         var artwork = new Artwork
         {
             CreatorId = "creator-2",
@@ -72,7 +69,6 @@ public sealed class GetArtworkByIdAsyncTests : ArtworkServiceTestsBase
 
         Assert.NotNull(result);
         Assert.Equal(artwork.Id, result!.Id);
-        Assert.Equal("Inactive artwork", result.Name);
     }
 
     [Fact]
