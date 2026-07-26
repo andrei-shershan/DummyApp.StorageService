@@ -44,6 +44,11 @@ public sealed class OrderService : IOrderService
             order = new Order { Id = orderId };
             _dbContext.Orders.Add(order);
         }
+        else if (order.Status != OrderStatus.Active)
+        {
+            _logger.LogWarning("Cannot update order {OrderId} because it is not active. Status: {Status}.", orderId, order.Status);
+            return false;
+        }
 
         var existingItem = order.Items.FirstOrDefault(i => i.ArtworkId == artworkId);
         if (existingItem is null)
@@ -122,5 +127,104 @@ public sealed class OrderService : IOrderService
             .ToListAsync();
 
         return items;
+    }
+
+    public async Task<OrderSummaryDto?> GetOrderSummaryAsync(Guid orderId)
+    {
+        if (orderId == Guid.Empty)
+        {
+            _logger.LogWarning("Invalid order id supplied to GetOrderSummaryAsync.");
+            return null;
+        }
+
+        var order = await _dbContext.Orders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == orderId);
+        if (order is null)
+        {
+            return null;
+        }
+
+        var items = await _dbContext.OrderItems
+            .AsNoTracking()
+            .Where(i => i.OrderId == orderId)
+            .Join(_dbContext.Artworks,
+                orderItem => orderItem.ArtworkId,
+                artwork => artwork.Id,
+                (orderItem, artwork) => new OrderItemDto
+                {
+                    OrderId = orderItem.OrderId,
+                    ArtworkId = orderItem.ArtworkId,
+                    Quantity = orderItem.Quantity,
+                    Name = artwork.Name,
+                    Description = artwork.Description,
+                    ImgUrl = artwork.ImgUrl,
+                    ThumbnailUrl = artwork.ThumbnailUrl
+                })
+            .ToListAsync();
+
+        return new OrderSummaryDto
+        {
+            Items = items,
+            Status = order.Status.ToString()
+        };
+    }
+
+    public async Task<OrderStatus?> GetOrderStatusAsync(Guid orderId)
+    {
+        if (orderId == Guid.Empty)
+        {
+            _logger.LogWarning("Invalid order id supplied to GetOrderStatusAsync.");
+            return null;
+        }
+
+        var order = await _dbContext.Orders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == orderId);
+        return order?.Status;
+    }
+
+    public async Task<bool> SetOrderStatusAsync(Guid orderId, OrderStatus status)
+    {
+        if (orderId == Guid.Empty)
+        {
+            _logger.LogWarning("Invalid order id supplied to SetOrderStatusAsync.");
+            return false;
+        }
+
+        var order = await _dbContext.Orders.FirstOrDefaultAsync(o => o.Id == orderId);
+        if (order is null)
+        {
+            _logger.LogWarning("Order {OrderId} not found when setting status.", orderId);
+            return false;
+        }
+
+        if (order.Status != OrderStatus.Active)
+        {
+            _logger.LogWarning("Cannot change status for order {OrderId} because it is not active. Current status: {Status}.", orderId, order.Status);
+            return false;
+        }
+
+        order.Status = status;
+        if (status == OrderStatus.Processing)
+        {
+            order.CompletedAt = null;
+        }
+        else if (status == OrderStatus.Completed)
+        {
+            order.CompletedAt = DateTime.UtcNow;
+        }
+
+        try
+        {
+            await _dbContext.SaveChangesAsync();
+            return true;
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Failed to update status for order {OrderId}.", orderId);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while updating status for order {OrderId}.", orderId);
+            return false;
+        }
     }
 }

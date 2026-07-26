@@ -63,6 +63,11 @@ public sealed class StorageDbContext : DbContext
 
             entity.Property(o => o.CompletedAt);
 
+            entity.Property(o => o.Status)
+                .IsRequired()
+                .HasMaxLength(20)
+                .HasConversion<string>();
+
             entity.HasMany(o => o.Items)
                 .WithOne(i => i.Order)
                 .HasForeignKey(i => i.OrderId)
