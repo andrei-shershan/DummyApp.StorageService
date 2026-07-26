@@ -25,22 +25,22 @@ public sealed class OrderService : IOrderService
             return false;
         }
 
-        if (quantity <= 0)
-        {
-            _logger.LogWarning("Invalid quantity {Quantity} provided to AddOrderItemAsync.", quantity);
-            return false;
-        }
-
         var artwork = await _dbContext.Artworks.AsNoTracking().FirstOrDefaultAsync(a => a.Id == artworkId);
         if (artwork is null)
         {
-            _logger.LogWarning("Artwork {ArtworkId} not found when adding order item.", artworkId);
+            _logger.LogWarning("Artwork {ArtworkId} not found when updating order item.", artworkId);
             return false;
         }
 
         var order = await _dbContext.Orders.Include(o => o.Items).FirstOrDefaultAsync(o => o.Id == orderId);
         if (order is null)
         {
+            if (quantity <= 0)
+            {
+                _logger.LogWarning("Cannot decrement or remove item from non-existent order {OrderId}.", orderId);
+                return false;
+            }
+
             order = new Order { Id = orderId };
             _dbContext.Orders.Add(order);
         }
@@ -48,12 +48,30 @@ public sealed class OrderService : IOrderService
         var existingItem = order.Items.FirstOrDefault(i => i.ArtworkId == artworkId);
         if (existingItem is null)
         {
+            if (quantity <= 0)
+            {
+                _logger.LogWarning("Attempted to remove non-existent order item {ArtworkId} from order {OrderId}.", artworkId, orderId);
+                return false;
+            }
+
             order.Items.Add(new OrderItem
             {
                 OrderId = orderId,
                 ArtworkId = artworkId,
                 Quantity = quantity
             });
+        }
+        else if (quantity == 0)
+        {
+            order.Items.Remove(existingItem);
+        }
+        else if (quantity < 0)
+        {
+            existingItem.Quantity += quantity;
+            if (existingItem.Quantity <= 0)
+            {
+                order.Items.Remove(existingItem);
+            }
         }
         else
         {

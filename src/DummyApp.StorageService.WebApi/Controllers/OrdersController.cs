@@ -22,15 +22,15 @@ public sealed class OrdersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> AddOrderItem([FromRoute] Guid orderId, [FromBody] AddOrderItemRequest request)
     {
-        if (orderId == Guid.Empty || request is null || request.ArtworkId == Guid.Empty || request.Quantity <= 0)
+        if (orderId == Guid.Empty || request is null || request.ArtworkId == Guid.Empty)
         {
-            return BadRequest("Valid orderId, artworkId, and quantity are required.");
+            return BadRequest("Valid orderId and artworkId are required.");
         }
 
         var result = await _orderService.AddOrderItemAsync(orderId, request.ArtworkId, request.Quantity);
         if (!result)
         {
-            return BadRequest("Unable to add item to order.");
+            return BadRequest("Unable to update order item.");
         }
 
         return Ok();
