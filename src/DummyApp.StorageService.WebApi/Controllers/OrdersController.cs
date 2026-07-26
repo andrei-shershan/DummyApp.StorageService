@@ -1,3 +1,4 @@
+using DummyApp.StorageService.Data.Models;
 using DummyApp.StorageService.Infrastructure.Services;
 using DummyApp.StorageService.WebApi.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -36,22 +37,41 @@ public sealed class OrdersController : ControllerBase
         return Ok();
     }
 
-    [HttpGet("{orderId}/items")]
-    [ProducesResponseType(typeof(IEnumerable<DummyApp.StorageService.Infrastructure.Models.OrderItemDto>), StatusCodes.Status200OK)]
+    [HttpGet("{orderId}")]
+    [ProducesResponseType(typeof(OrderSummaryResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetOrderItems([FromRoute] Guid orderId)
+    public async Task<IActionResult> GetOrderSummary([FromRoute] Guid orderId)
     {
         if (orderId == Guid.Empty)
         {
             return BadRequest("OrderId is required.");
         }
 
-        var items = await _orderService.GetOrderItemsAsync(orderId);
-        if (items is null)
+        var summary = await _orderService.GetOrderSummaryAsync(orderId);
+        if (summary is null)
         {
             return NotFound();
         }
 
-        return Ok(items);
+        return Ok(new OrderSummaryResponse { Items = summary.Items, Status = summary.Status });
+    }
+
+    [HttpPost("{orderId}/pay")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> PayOrder([FromRoute] Guid orderId)
+    {
+        if (orderId == Guid.Empty)
+        {
+            return BadRequest("OrderId is required.");
+        }
+
+        var result = await _orderService.SetOrderStatusAsync(orderId, OrderStatus.Processing);
+        if (!result)
+        {
+            return BadRequest("Unable to transition order to processing.");
+        }
+
+        return Ok();
     }
 }

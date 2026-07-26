@@ -1,3 +1,4 @@
+using DummyApp.StorageService.Infrastructure.Models;
 using DummyApp.StorageService.Infrastructure.Services;
 using DummyApp.StorageService.WebApi.Controllers;
 using Microsoft.AspNetCore.Mvc;
@@ -6,61 +7,66 @@ using Xunit;
 
 namespace DummyApp.StorageService.WebApi.Tests.OrdersControllerTests;
 
-public sealed class GetOrderItemsTests
+public sealed class GetOrderSummaryTests
 {
     [Fact]
-    public async Task GetOrderItems_ReturnsBadRequest_WhenOrderIdIsEmpty()
+    public async Task GetOrderSummary_ReturnsBadRequest_WhenOrderIdIsEmpty()
     {
         var orderService = new Mock<IOrderService>();
         var controller = new OrdersController(orderService.Object);
 
-        var result = await controller.GetOrderItems(Guid.Empty);
+        var result = await controller.GetOrderSummary(Guid.Empty);
 
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
         Assert.Equal("OrderId is required.", badRequest.Value);
-        orderService.Verify(x => x.GetOrderItemsAsync(It.IsAny<Guid>()), Times.Never);
+        orderService.Verify(x => x.GetOrderSummaryAsync(It.IsAny<Guid>()), Times.Never);
     }
 
     [Fact]
-    public async Task GetOrderItems_ReturnsNotFound_WhenServiceReturnsNull()
+    public async Task GetOrderSummary_ReturnsNotFound_WhenServiceReturnsNull()
     {
         var orderService = new Mock<IOrderService>();
-        orderService.Setup(x => x.GetOrderItemsAsync(It.IsAny<Guid>())).ReturnsAsync((IEnumerable<DummyApp.StorageService.Infrastructure.Models.OrderItemDto>?)null);
+        orderService.Setup(x => x.GetOrderSummaryAsync(It.IsAny<Guid>())).ReturnsAsync((OrderSummaryDto?)null);
 
         var controller = new OrdersController(orderService.Object);
 
-        var result = await controller.GetOrderItems(Guid.NewGuid());
+        var result = await controller.GetOrderSummary(Guid.NewGuid());
 
         Assert.IsType<NotFoundResult>(result);
     }
 
     [Fact]
-    public async Task GetOrderItems_ReturnsOk_WhenServiceReturnsItems()
+    public async Task GetOrderSummary_ReturnsOk_WhenServiceReturnsSummary()
     {
         var orderId = Guid.NewGuid();
-        var expected = new[]
+        var expected = new OrderSummaryDto
         {
-            new DummyApp.StorageService.Infrastructure.Models.OrderItemDto
+            Items = new[]
             {
-                OrderId = orderId,
-                ArtworkId = Guid.NewGuid(),
-                Quantity = 1,
-                Name = "Test",
-                Description = "Desc",
-                ImgUrl = "img",
-                ThumbnailUrl = "thumb"
-            }
+                new OrderItemDto
+                {
+                    OrderId = orderId,
+                    ArtworkId = Guid.NewGuid(),
+                    Quantity = 1,
+                    Name = "Test",
+                    Description = "Desc",
+                    ImgUrl = "img",
+                    ThumbnailUrl = "thumb"
+                }
+            },
+            Status = "Active"
         };
 
         var orderService = new Mock<IOrderService>();
-        orderService.Setup(x => x.GetOrderItemsAsync(orderId)).ReturnsAsync(expected);
+        orderService.Setup(x => x.GetOrderSummaryAsync(orderId)).ReturnsAsync(expected);
 
         var controller = new OrdersController(orderService.Object);
 
-        var result = await controller.GetOrderItems(orderId);
+        var result = await controller.GetOrderSummary(orderId);
 
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var returnedItems = Assert.IsAssignableFrom<IEnumerable<DummyApp.StorageService.Infrastructure.Models.OrderItemDto>>(okResult.Value);
-        Assert.Equal(expected, returnedItems);
+        var returnedSummary = Assert.IsType<OrderSummaryDto>(okResult.Value);
+        Assert.Equal(expected.Status, returnedSummary.Status);
+        Assert.Equal(expected.Items, returnedSummary.Items);
     }
 }
