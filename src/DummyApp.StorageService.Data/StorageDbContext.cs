@@ -12,6 +12,8 @@ public sealed class StorageDbContext : DbContext
 
     public DbSet<Artwork> Artworks { get; set; } = null!;
     public DbSet<Series> Series { get; set; } = null!;
+    public DbSet<Order> Orders { get; set; } = null!;
+    public DbSet<OrderItem> OrderItems { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -52,6 +54,32 @@ public sealed class StorageDbContext : DbContext
 
             entity.HasIndex(s => new { s.CreatorId, s.Name })
                 .IsUnique();
+        });
+
+        modelBuilder.Entity<Order>(entity =>
+        {
+            entity.Property(o => o.CreatedAt)
+                .IsRequired();
+
+            entity.Property(o => o.CompletedAt);
+
+            entity.HasMany(o => o.Items)
+                .WithOne(i => i.Order)
+                .HasForeignKey(i => i.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<OrderItem>(entity =>
+        {
+            entity.HasKey(i => new { i.OrderId, i.ArtworkId });
+
+            entity.Property(i => i.Quantity)
+                .IsRequired();
+
+            entity.HasOne(i => i.Artwork)
+                .WithMany()
+                .HasForeignKey(i => i.ArtworkId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
