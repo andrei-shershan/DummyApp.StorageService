@@ -10,7 +10,7 @@ namespace DummyApp.StorageService.WebApi.Tests.OrdersControllerTests;
 public sealed class OrdersControllerTests
 {
     [Fact]
-    public async Task AddOrderItem_ReturnsBadRequest_WhenRequestIsInvalid()
+    public async Task AddOrderItem_ReturnsBadRequest_WhenOrderIdOrArtworkIdIsInvalid()
     {
         var orderService = new Mock<IOrderService>();
         var controller = new OrdersController(orderService.Object);
