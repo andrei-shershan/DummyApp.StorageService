@@ -1,6 +1,7 @@
 using DummyApp.StorageService.Infrastructure.Models;
 using DummyApp.StorageService.Infrastructure.Services;
 using DummyApp.StorageService.WebApi.Controllers;
+using DummyApp.StorageService.WebApi.Models;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Xunit;
@@ -65,7 +66,7 @@ public sealed class GetOrderSummaryTests
         var result = await controller.GetOrderSummary(orderId);
 
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var returnedSummary = Assert.IsType<OrderSummaryDto>(okResult.Value);
+        var returnedSummary = Assert.IsType<OrderSummaryResponse>(okResult.Value);
         Assert.Equal(expected.Status, returnedSummary.Status);
         Assert.Equal(expected.Items, returnedSummary.Items);
     }
