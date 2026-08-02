@@ -14,6 +14,8 @@ public sealed class StorageDbContext : DbContext
     public DbSet<Series> Series { get; set; } = null!;
     public DbSet<Order> Orders { get; set; } = null!;
     public DbSet<OrderItem> OrderItems { get; set; } = null!;
+    public DbSet<PrintSize> PrintSizes { get; set; } = null!;
+    public DbSet<Price> Prices { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -84,6 +86,34 @@ public sealed class StorageDbContext : DbContext
             entity.HasOne(i => i.Artwork)
                 .WithMany()
                 .HasForeignKey(i => i.ArtworkId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PrintSize>(entity =>
+        {
+            entity.Property(p => p.Name)
+                .IsRequired()
+                .HasMaxLength(20);
+
+            entity.HasIndex(p => p.Name)
+                .IsUnique();
+        });
+
+        modelBuilder.Entity<Price>(entity =>
+        {
+            entity.Property(p => p.Value)
+                .IsRequired()
+                .HasPrecision(18, 2);
+
+            entity.Property(p => p.UpdatedAt)
+                .IsRequired();
+
+            entity.Property(p => p.IsDeleted)
+                .IsRequired();
+
+            entity.HasOne(p => p.PrintSize)
+                .WithMany(ps => ps.Prices)
+                .HasForeignKey(p => p.PrintSizeId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }
