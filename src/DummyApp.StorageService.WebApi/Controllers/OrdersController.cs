@@ -75,22 +75,28 @@ public sealed class OrdersController : ControllerBase
         return Ok(new OrderSummaryResponse { Items = summary.Items, Status = summary.Status });
     }
 
-    [HttpPost("{orderId}/pay")]
+    [HttpPost("{orderId}/status")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> PayOrder([FromRoute] Guid orderId)
+    public async Task<IActionResult> SetOrderStatus([FromRoute] Guid orderId, [FromBody] SetOrderStatusRequest request)
     {
-        if (orderId == Guid.Empty)
+        if (orderId == Guid.Empty || request is null || string.IsNullOrWhiteSpace(request.Status))
         {
-            return BadRequest("OrderId is required.");
+            return BadRequest("OrderId and status are required.");
         }
 
-        var result = await _orderService.SetOrderStatusAsync(orderId, OrderStatus.Processing);
+        if (!Enum.TryParse<OrderStatus>(request.Status, true, out var status))
+        {
+            return BadRequest("Invalid order status.");
+        }
+
+        var result = await _orderService.SetOrderStatusAsync(orderId, status);
         if (!result)
         {
-            return BadRequest("Unable to transition order to processing.");
+            return BadRequest("Unable to update order status.");
         }
 
         return Ok();
     }
 }
+
