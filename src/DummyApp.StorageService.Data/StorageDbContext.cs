@@ -83,38 +83,26 @@ public sealed class StorageDbContext : DbContext
             entity.Property(i => i.Quantity)
                 .IsRequired();
 
+            entity.Property(i => i.PriceValue)
+                .HasPrecision(18, 2);
+
             entity.HasOne(i => i.Artwork)
                 .WithMany()
                 .HasForeignKey(i => i.ArtworkId)
                 .OnDelete(DeleteBehavior.Cascade);
-        });
 
-        modelBuilder.Entity<PrintSize>(entity =>
-        {
-            entity.Property(p => p.Name)
-                .IsRequired()
-                .HasMaxLength(20);
+            entity.HasOne(i => i.PrintSize)
+                .WithMany()
+                .HasForeignKey(i => i.PrintSizeId)
+                .OnDelete(DeleteBehavior.SetNull);
 
-            entity.HasIndex(p => p.Name)
-                .IsUnique();
-        });
+            entity.HasOne(i => i.Price)
+                .WithMany()
+                .HasForeignKey(i => i.PriceId)
+                .OnDelete(DeleteBehavior.SetNull);
 
-        modelBuilder.Entity<Price>(entity =>
-        {
-            entity.Property(p => p.Value)
-                .IsRequired()
-                .HasPrecision(18, 2);
-
-            entity.Property(p => p.UpdatedAt)
-                .IsRequired();
-
-            entity.Property(p => p.IsDeleted)
-                .IsRequired();
-
-            entity.HasOne(p => p.PrintSize)
-                .WithMany(ps => ps.Prices)
-                .HasForeignKey(p => p.PrintSizeId)
-                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(i => i.PrintSizeId);
+            entity.HasIndex(i => i.PriceId);
         });
     }
 }

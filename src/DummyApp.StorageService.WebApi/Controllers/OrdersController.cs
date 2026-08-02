@@ -23,12 +23,31 @@ public sealed class OrdersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> AddOrderItem([FromRoute] Guid orderId, [FromBody] AddOrderItemRequest request)
     {
-        if (orderId == Guid.Empty || request is null || request.ArtworkId == Guid.Empty)
+        if (orderId == Guid.Empty || request is null || request.ArtworkId == Guid.Empty || request.Quantity <= 0)
         {
-            return BadRequest("Valid orderId and artworkId are required.");
+            return BadRequest("Valid orderId, artworkId and positive quantity are required.");
         }
 
-        var result = await _orderService.AddOrderItemAsync(orderId, request.ArtworkId, request.Quantity);
+        var result = await _orderService.AddOrderItemAsync(orderId, request.ArtworkId, request.Quantity, request.PrintSizeId, request.PriceId);
+        if (!result)
+        {
+            return BadRequest("Unable to add order item.");
+        }
+
+        return Ok();
+    }
+
+    [HttpPatch("{orderId}/items/{artworkId}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateOrderItem([FromRoute] Guid orderId, [FromRoute] Guid artworkId, [FromBody] UpdateOrderItemRequest request)
+    {
+        if (orderId == Guid.Empty || artworkId == Guid.Empty || request is null || request.Quantity < 0)
+        {
+            return BadRequest("Valid orderId, artworkId and non-negative quantity are required.");
+        }
+
+        var result = await _orderService.UpdateOrderItemAsync(orderId, artworkId, request.Quantity, request.PrintSizeId, request.PriceId);
         if (!result)
         {
             return BadRequest("Unable to update order item.");

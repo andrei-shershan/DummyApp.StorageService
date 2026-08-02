@@ -6,7 +6,8 @@ namespace DummyApp.StorageService.Infrastructure.Services;
 
 public interface IOrderService
 {
-    Task<bool> AddOrderItemAsync(Guid orderId, Guid artworkId, int quantity);
+    Task<bool> AddOrderItemAsync(Guid orderId, Guid artworkId, int quantity, int? printSizeId = null, int? priceId = null);
+    Task<bool> UpdateOrderItemAsync(Guid orderId, Guid artworkId, int quantity, int? printSizeId = null, int? priceId = null);
     Task<IEnumerable<OrderItemDto>> GetOrderItemsAsync(Guid orderId);
     Task<OrderSummaryDto?> GetOrderSummaryAsync(Guid orderId);
     Task<OrderStatus?> GetOrderStatusAsync(Guid orderId);
