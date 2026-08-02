@@ -5,9 +5,10 @@ namespace DummyApp.StorageService.Data.Models;
 
 public enum OrderStatus
 {
-    Active,
-    Processing,
-    Completed
+    Active = 0,
+    Processing = 10,
+    WaitingForPayment = 20,
+    Completed = 30
 }
 
 public sealed class Order

@@ -8,14 +8,26 @@ using Xunit;
 
 namespace DummyApp.StorageService.Infrastructure.Tests.OrderServiceTests;
 
-public sealed class GetOrderItemsAsyncTests
+public sealed class GetOrderItemsAsyncTests : OrderServiceTestsBase
 {
+    [Fact]
+    public async Task ReturnsEmpty_WhenOrderIdIsInvalid()
+    {
+        await using var context = CreateContext("GetOrderItemsAsync_InvalidOrderId");
+        var loggerMock = new Mock<ILogger<OrderService>>();
+        var service = CreateService(context, loggerMock);
+
+        var result = await service.GetOrderItemsAsync(Guid.Empty);
+
+        Assert.Empty(result);
+    }
+
     [Fact]
     public async Task ReturnsEmpty_WhenOrderDoesNotExist()
     {
         await using var context = CreateContext("GetOrderItemsAsync_OrderDoesNotExist");
         var loggerMock = new Mock<ILogger<OrderService>>();
-        var service = new OrderService(context, loggerMock.Object);
+        var service = CreateService(context, loggerMock);
 
         var result = await service.GetOrderItemsAsync(Guid.NewGuid());
 

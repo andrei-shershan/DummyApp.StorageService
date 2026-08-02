@@ -17,7 +17,7 @@ public sealed class OrderService : IOrderService
         _logger = logger;
     }
 
-    public async Task<bool> AddOrderItemAsync(Guid orderId, Guid artworkId, int quantity)
+    public async Task<bool> AddOrderItemAsync(Guid orderId, Guid artworkId, int quantity, int? printSizeId = null, int? priceId = null)
     {
         if (orderId == Guid.Empty || artworkId == Guid.Empty)
         {
@@ -25,62 +25,136 @@ public sealed class OrderService : IOrderService
             return false;
         }
 
+        if (quantity <= 0)
+        {
+            _logger.LogWarning("Invalid quantity {Quantity} provided to AddOrderItemAsync for artwork {ArtworkId}.", quantity, artworkId);
+            return false;
+        }
+
         var artwork = await _dbContext.Artworks.AsNoTracking().FirstOrDefaultAsync(a => a.Id == artworkId);
         if (artwork is null)
         {
-            _logger.LogWarning("Artwork {ArtworkId} not found when updating order item.", artworkId);
+            _logger.LogWarning("Artwork {ArtworkId} not found when creating order item.", artworkId);
             return false;
         }
 
         var order = await _dbContext.Orders.Include(o => o.Items).FirstOrDefaultAsync(o => o.Id == orderId);
         if (order is null)
         {
-            if (quantity <= 0)
-            {
-                _logger.LogWarning("Cannot decrement or remove item from non-existent order {OrderId}.", orderId);
-                return false;
-            }
-
             order = new Order { Id = orderId };
             _dbContext.Orders.Add(order);
         }
-        else if (order.Status != OrderStatus.Active)
+        else if (order.Status != OrderStatus.Active && order.Status != OrderStatus.Processing)
         {
-            _logger.LogWarning("Cannot update order {OrderId} because it is not active. Status: {Status}.", orderId, order.Status);
+            _logger.LogWarning("Cannot add item to order {OrderId} because it is not editable. Status: {Status}.", orderId, order.Status);
             return false;
+        }
+
+        if (order.Status == OrderStatus.Processing)
+        {
+            order.Status = OrderStatus.Active;
+            order.CompletedAt = null;
+        }
+
+        var existingItem = order.Items.FirstOrDefault(i => i.ArtworkId == artworkId);
+        if (existingItem is not null)
+        {
+            _logger.LogWarning("Attempted to add duplicate artwork {ArtworkId} to order {OrderId}.", artworkId, orderId);
+            return false;
+        }
+
+        var newItem = new OrderItem
+        {
+            OrderId = orderId,
+            ArtworkId = artworkId,
+            Quantity = quantity,
+            PrintSizeId = printSizeId,
+            PriceId = priceId,
+            PriceValue = null
+        };
+
+        if (priceId.HasValue)
+        {
+            var selectedPrice = await _dbContext.Prices.AsNoTracking().FirstOrDefaultAsync(p => p.Id == priceId.Value);
+            if (selectedPrice is not null)
+            {
+                newItem.PriceValue = selectedPrice.Value;
+            }
+        }
+
+        order.Items.Add(newItem);
+
+        try
+        {
+            await _dbContext.SaveChangesAsync();
+            return true;
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Failed to save order item for order {OrderId}.", orderId);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while saving order item for order {OrderId}.", orderId);
+            return false;
+        }
+    }
+
+    public async Task<bool> UpdateOrderItemAsync(Guid orderId, Guid artworkId, int quantity, int? printSizeId = null, int? priceId = null)
+    {
+        if (orderId == Guid.Empty || artworkId == Guid.Empty)
+        {
+            _logger.LogWarning("Invalid orderId or artworkId provided to UpdateOrderItemAsync.");
+            return false;
+        }
+
+        if (quantity < 0)
+        {
+            _logger.LogWarning("Invalid quantity {Quantity} provided to UpdateOrderItemAsync for artwork {ArtworkId}.", quantity, artworkId);
+            return false;
+        }
+
+        var order = await _dbContext.Orders.Include(o => o.Items).FirstOrDefaultAsync(o => o.Id == orderId);
+        if (order is null)
+        {
+            _logger.LogWarning("Order {OrderId} not found when updating order item.", orderId);
+            return false;
+        }
+
+        if (order.Status != OrderStatus.Active && order.Status != OrderStatus.Processing)
+        {
+            _logger.LogWarning("Cannot update order {OrderId} because it is not editable. Status: {Status}.", orderId, order.Status);
+            return false;
+        }
+
+        if (order.Status == OrderStatus.Processing)
+        {
+            order.Status = OrderStatus.Active;
+            order.CompletedAt = null;
         }
 
         var existingItem = order.Items.FirstOrDefault(i => i.ArtworkId == artworkId);
         if (existingItem is null)
         {
-            if (quantity <= 0)
-            {
-                _logger.LogWarning("Attempted to remove non-existent order item {ArtworkId} from order {OrderId}.", artworkId, orderId);
-                return false;
-            }
-
-            order.Items.Add(new OrderItem
-            {
-                OrderId = orderId,
-                ArtworkId = artworkId,
-                Quantity = quantity
-            });
+            _logger.LogWarning("Attempted to update non-existent order item {ArtworkId} in order {OrderId}.", artworkId, orderId);
+            return false;
         }
-        else if (quantity == 0)
+
+        if (quantity == 0)
         {
             order.Items.Remove(existingItem);
         }
-        else if (quantity < 0)
-        {
-            existingItem.Quantity += quantity;
-            if (existingItem.Quantity <= 0)
-            {
-                order.Items.Remove(existingItem);
-            }
-        }
         else
         {
-            existingItem.Quantity += quantity;
+            existingItem.Quantity = quantity;
+            existingItem.PrintSizeId = printSizeId ?? existingItem.PrintSizeId;
+            existingItem.PriceId = priceId ?? existingItem.PriceId;
+            if (priceId.HasValue)
+            {
+                var selectedPrice = await _dbContext.Prices.AsNoTracking().FirstOrDefaultAsync(p => p.Id == priceId.Value);
+                existingItem.PriceValue = selectedPrice?.Value;
+            }
         }
 
         try
@@ -111,19 +185,23 @@ public sealed class OrderService : IOrderService
         var items = await _dbContext.OrderItems
             .AsNoTracking()
             .Where(i => i.OrderId == orderId)
-            .Join(_dbContext.Artworks,
-                orderItem => orderItem.ArtworkId,
-                artwork => artwork.Id,
-                (orderItem, artwork) => new OrderItemDto
-                {
-                    OrderId = orderItem.OrderId,
-                    ArtworkId = orderItem.ArtworkId,
-                    Quantity = orderItem.Quantity,
-                    Name = artwork.Name,
-                    Description = artwork.Description,
-                    ImgUrl = artwork.ImgUrl,
-                    ThumbnailUrl = artwork.ThumbnailUrl
-                })
+            .Include(i => i.Artwork)
+            .Include(i => i.PrintSize)
+            .Include(i => i.Price)
+            .Select(orderItem => new OrderItemDto
+            {
+                OrderId = orderItem.OrderId,
+                ArtworkId = orderItem.ArtworkId,
+                Quantity = orderItem.Quantity,
+                Name = orderItem.Artwork!.Name,
+                Description = orderItem.Artwork.Description,
+                ImgUrl = orderItem.Artwork.ImgUrl,
+                ThumbnailUrl = orderItem.Artwork.ThumbnailUrl,
+                PrintSizeId = orderItem.PrintSizeId,
+                PrintSizeName = orderItem.PrintSize != null ? orderItem.PrintSize.Name : string.Empty,
+                PriceId = orderItem.PriceId,
+                PriceValue = orderItem.PriceValue ?? (orderItem.Price != null ? orderItem.Price.Value : (decimal?)null)
+            })
             .ToListAsync();
 
         return items;
@@ -146,19 +224,23 @@ public sealed class OrderService : IOrderService
         var items = await _dbContext.OrderItems
             .AsNoTracking()
             .Where(i => i.OrderId == orderId)
-            .Join(_dbContext.Artworks,
-                orderItem => orderItem.ArtworkId,
-                artwork => artwork.Id,
-                (orderItem, artwork) => new OrderItemDto
-                {
-                    OrderId = orderItem.OrderId,
-                    ArtworkId = orderItem.ArtworkId,
-                    Quantity = orderItem.Quantity,
-                    Name = artwork.Name,
-                    Description = artwork.Description,
-                    ImgUrl = artwork.ImgUrl,
-                    ThumbnailUrl = artwork.ThumbnailUrl
-                })
+            .Include(i => i.Artwork)
+            .Include(i => i.PrintSize)
+            .Include(i => i.Price)
+            .Select(orderItem => new OrderItemDto
+            {
+                OrderId = orderItem.OrderId,
+                ArtworkId = orderItem.ArtworkId,
+                Quantity = orderItem.Quantity,
+                Name = orderItem.Artwork!.Name,
+                Description = orderItem.Artwork.Description,
+                ImgUrl = orderItem.Artwork.ImgUrl,
+                ThumbnailUrl = orderItem.Artwork.ThumbnailUrl,
+                PrintSizeId = orderItem.PrintSizeId,
+                PrintSizeName = orderItem.PrintSize != null ? orderItem.PrintSize.Name : string.Empty,
+                PriceId = orderItem.PriceId,
+                PriceValue = orderItem.PriceValue ?? (orderItem.Price != null ? orderItem.Price.Value : (decimal?)null)
+            })
             .ToListAsync();
 
         return new OrderSummaryDto

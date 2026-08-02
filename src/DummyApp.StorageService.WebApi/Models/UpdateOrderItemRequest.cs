@@ -1,8 +1,7 @@
 namespace DummyApp.StorageService.WebApi.Models;
 
-public sealed class AddOrderItemRequest
+public sealed class UpdateOrderItemRequest
 {
-    public Guid ArtworkId { get; set; }
     public int Quantity { get; set; }
     public int? PrintSizeId { get; set; }
     public int? PriceId { get; set; }
