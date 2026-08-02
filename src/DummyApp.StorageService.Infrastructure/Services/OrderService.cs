@@ -277,14 +277,18 @@ public sealed class OrderService : IOrderService
             return false;
         }
 
-        if (order.Status != OrderStatus.Active)
+        if (order.Status != OrderStatus.Active && order.Status != OrderStatus.Processing)
         {
-            _logger.LogWarning("Cannot change status for order {OrderId} because it is not active. Current status: {Status}.", orderId, order.Status);
+            _logger.LogWarning("Cannot change status for order {OrderId} because it is not editable. Current status: {Status}.", orderId, order.Status);
             return false;
         }
 
         order.Status = status;
         if (status == OrderStatus.Processing)
+        {
+            order.CompletedAt = null;
+        }
+        else if (status == OrderStatus.Active)
         {
             order.CompletedAt = null;
         }
