@@ -129,6 +129,65 @@ namespace DummyApp.StorageService.Data.Migrations
                     b.ToTable("OrderItems");
                 });
 
+            modelBuilder.Entity("DummyApp.StorageService.Data.Models.PrintSize", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("PrintSizes");
+                });
+
+            modelBuilder.Entity("DummyApp.StorageService.Data.Models.Price", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<int>("PrintSizeId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Value")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PrintSizeId");
+
+                    b.ToTable("Prices");
+                });
+
+            modelBuilder.Entity("DummyApp.StorageService.Data.Models.Price", b =>
+                {
+                    b.HasOne("DummyApp.StorageService.Data.Models.PrintSize", "PrintSize")
+                        .WithMany("Prices")
+                        .HasForeignKey("PrintSizeId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("PrintSize");
+                });
+
+            modelBuilder.Entity("DummyApp.StorageService.Data.Models.PrintSize", b =>
+                {
+                    b.Navigation("Prices");
+                });
+
             modelBuilder.Entity("DummyApp.StorageService.Data.Models.Artwork", b =>
                 {
                     b.HasOne("DummyApp.StorageService.Data.Models.Series", "Series")

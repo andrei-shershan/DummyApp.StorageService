@@ -28,6 +28,7 @@ public sealed class StorageDatabaseOptions
 {
     public bool UseInMemory { get; set; } = true;
     public string ConnectionString { get; set; } = string.Empty;
+    public bool SeedPricesAndSizes { get; set; }
 }
 
 public sealed class KeyVaultOptions
