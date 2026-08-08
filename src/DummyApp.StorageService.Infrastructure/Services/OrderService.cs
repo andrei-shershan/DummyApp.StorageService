@@ -277,7 +277,7 @@ public sealed class OrderService : IOrderService
             return false;
         }
 
-        if (order.Status != OrderStatus.Active && order.Status != OrderStatus.Processing)
+        if (order.Status != OrderStatus.Active && order.Status != OrderStatus.Processing && order.Status != OrderStatus.WaitingForPayment)
         {
             _logger.LogWarning("Cannot change status for order {OrderId} because it is not editable. Current status: {Status}.", orderId, order.Status);
             return false;
