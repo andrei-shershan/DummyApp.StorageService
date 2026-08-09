@@ -1,4 +1,5 @@
 using DummyApp.StorageService.Data.Models;
+using DummyApp.StorageService.Infrastructure.Models;
 using DummyApp.StorageService.Infrastructure.Services;
 using DummyApp.StorageService.WebApi.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -72,7 +73,80 @@ public sealed class OrdersController : ControllerBase
             return NotFound();
         }
 
-        return Ok(new OrderSummaryResponse { Items = summary.Items, Status = summary.Status });
+        return Ok(new OrderSummaryResponse { Items = summary.Items, Status = summary.Status, Address = summary.Address is not null ? new OrderAddressResponse
+        {
+            FirstName = summary.Address.FirstName,
+            LastName = summary.Address.LastName,
+            Phone = summary.Address.Phone,
+            Email = summary.Address.Email,
+            Country = summary.Address.Country,
+            City = summary.Address.City,
+            Street = summary.Address.Street,
+            HouseNumber = summary.Address.HouseNumber,
+            PostalCode = summary.Address.PostalCode
+        } : null });
+    }
+
+    [HttpGet("{orderId}/address")]
+    [ProducesResponseType(typeof(OrderAddressResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetOrderAddress([FromRoute] Guid orderId)
+    {
+        if (orderId == Guid.Empty)
+        {
+            return BadRequest("OrderId is required.");
+        }
+
+        var address = await _orderService.GetOrderAddressAsync(orderId);
+        if (address is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(new OrderAddressResponse
+        {
+            FirstName = address.FirstName,
+            LastName = address.LastName,
+            Phone = address.Phone,
+            Email = address.Email,
+            Country = address.Country,
+            City = address.City,
+            Street = address.Street,
+            HouseNumber = address.HouseNumber,
+            PostalCode = address.PostalCode
+        });
+    }
+
+    [HttpPost("{orderId}/address")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SaveOrderAddress([FromRoute] Guid orderId, [FromBody] SaveOrderAddressRequest request)
+    {
+        if (orderId == Guid.Empty || request is null)
+        {
+            return BadRequest("OrderId and address are required.");
+        }
+
+        var address = new OrderAddressDto
+        {
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            Phone = request.Phone,
+            Email = request.Email,
+            Country = request.Country,
+            City = request.City,
+            Street = request.Street,
+            HouseNumber = request.HouseNumber,
+            PostalCode = request.PostalCode
+        };
+
+        var result = await _orderService.SaveOrderAddressAsync(orderId, address);
+        if (!result)
+        {
+            return BadRequest("Unable to save order address.");
+        }
+
+        return Ok();
     }
 
     [HttpPost("{orderId}/status")]
