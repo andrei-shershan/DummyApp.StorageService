@@ -13,6 +13,7 @@ public sealed class StorageDbContext : DbContext
     public DbSet<Artwork> Artworks { get; set; } = null!;
     public DbSet<Series> Series { get; set; } = null!;
     public DbSet<Order> Orders { get; set; } = null!;
+    public DbSet<OrderAddress> OrderAddresses { get; set; } = null!;
     public DbSet<OrderItem> OrderItems { get; set; } = null!;
     public DbSet<PrintSize> PrintSizes { get; set; } = null!;
     public DbSet<Price> Prices { get; set; } = null!;
@@ -74,6 +75,52 @@ public sealed class StorageDbContext : DbContext
                 .WithOne(i => i.Order)
                 .HasForeignKey(i => i.OrderId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(o => o.Address)
+                .WithOne(a => a.Order)
+                .HasForeignKey<OrderAddress>(a => a.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<OrderAddress>(entity =>
+        {
+            entity.HasKey(a => a.OrderId);
+
+            entity.Property(a => a.FirstName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(a => a.LastName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(a => a.Phone)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(a => a.Email)
+                .IsRequired()
+                .HasMaxLength(255);
+
+            entity.Property(a => a.Country)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(a => a.City)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(a => a.Street)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            entity.Property(a => a.HouseNumber)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(a => a.PostalCode)
+                .IsRequired()
+                .HasMaxLength(20);
         });
 
         modelBuilder.Entity<OrderItem>(entity =>

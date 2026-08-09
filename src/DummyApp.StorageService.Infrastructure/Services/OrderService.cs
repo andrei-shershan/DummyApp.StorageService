@@ -44,13 +44,13 @@ public sealed class OrderService : IOrderService
             order = new Order { Id = orderId };
             _dbContext.Orders.Add(order);
         }
-        else if (order.Status != OrderStatus.Active && order.Status != OrderStatus.Processing)
+        else if (order.Status != OrderStatus.Active && order.Status != OrderStatus.Processing && order.Status != OrderStatus.Address)
         {
             _logger.LogWarning("Cannot add item to order {OrderId} because it is not editable. Status: {Status}.", orderId, order.Status);
             return false;
         }
 
-        if (order.Status == OrderStatus.Processing)
+        if (order.Status == OrderStatus.Processing || order.Status == OrderStatus.Address)
         {
             order.Status = OrderStatus.Active;
             order.CompletedAt = null;
@@ -122,13 +122,13 @@ public sealed class OrderService : IOrderService
             return false;
         }
 
-        if (order.Status != OrderStatus.Active && order.Status != OrderStatus.Processing)
+        if (order.Status != OrderStatus.Active && order.Status != OrderStatus.Processing && order.Status != OrderStatus.Address)
         {
             _logger.LogWarning("Cannot update order {OrderId} because it is not editable. Status: {Status}.", orderId, order.Status);
             return false;
         }
 
-        if (order.Status == OrderStatus.Processing)
+        if (order.Status == OrderStatus.Processing || order.Status == OrderStatus.Address)
         {
             order.Status = OrderStatus.Active;
             order.CompletedAt = null;
@@ -215,7 +215,7 @@ public sealed class OrderService : IOrderService
             return null;
         }
 
-        var order = await _dbContext.Orders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == orderId);
+        var order = await _dbContext.Orders.AsNoTracking().Include(o => o.Address).FirstOrDefaultAsync(o => o.Id == orderId);
         if (order is null)
         {
             return null;
@@ -246,8 +246,109 @@ public sealed class OrderService : IOrderService
         return new OrderSummaryDto
         {
             Items = items,
-            Status = order.Status.ToString()
+            Status = order.Status.ToString(),
+            Address = order.Address is not null ? new OrderAddressDto
+            {
+                FirstName = order.Address.FirstName,
+                LastName = order.Address.LastName,
+                Phone = order.Address.Phone,
+                Email = order.Address.Email,
+                Country = order.Address.Country,
+                City = order.Address.City,
+                Street = order.Address.Street,
+                HouseNumber = order.Address.HouseNumber,
+                PostalCode = order.Address.PostalCode
+            } : null
         };
+    }
+
+    public async Task<OrderAddressDto?> GetOrderAddressAsync(Guid orderId)
+    {
+        if (orderId == Guid.Empty)
+        {
+            _logger.LogWarning("Invalid order id supplied to GetOrderAddressAsync.");
+            return null;
+        }
+
+        var order = await _dbContext.Orders.AsNoTracking().Include(o => o.Address).FirstOrDefaultAsync(o => o.Id == orderId);
+        if (order is null || order.Address is null)
+        {
+            return null;
+        }
+
+        return new OrderAddressDto
+        {
+            FirstName = order.Address.FirstName,
+            LastName = order.Address.LastName,
+            Phone = order.Address.Phone,
+            Email = order.Address.Email,
+            Country = order.Address.Country,
+            City = order.Address.City,
+            Street = order.Address.Street,
+            HouseNumber = order.Address.HouseNumber,
+            PostalCode = order.Address.PostalCode
+        };
+    }
+
+    public async Task<bool> SaveOrderAddressAsync(Guid orderId, OrderAddressDto address)
+    {
+        if (orderId == Guid.Empty)
+        {
+            _logger.LogWarning("Invalid order id supplied to SaveOrderAddressAsync.");
+            return false;
+        }
+
+        if (address is null)
+        {
+            _logger.LogWarning("Invalid address supplied to SaveOrderAddressAsync for order {OrderId}.", orderId);
+            return false;
+        }
+
+        var order = await _dbContext.Orders.Include(o => o.Address).FirstOrDefaultAsync(o => o.Id == orderId);
+        if (order is null)
+        {
+            order = new Order { Id = orderId, Status = OrderStatus.Address };
+            _dbContext.Orders.Add(order);
+        }
+        else if (order.Status != OrderStatus.Active && order.Status != OrderStatus.Processing && order.Status != OrderStatus.Address)
+        {
+            _logger.LogWarning("Cannot save address for order {OrderId} because it is not editable. Status: {Status}.", orderId, order.Status);
+            return false;
+        }
+
+        order.Status = OrderStatus.Address;
+        order.CompletedAt = null;
+
+        if (order.Address is null)
+        {
+            order.Address = new OrderAddress { OrderId = orderId };
+        }
+
+        order.Address.FirstName = address.FirstName;
+        order.Address.LastName = address.LastName;
+        order.Address.Phone = address.Phone;
+        order.Address.Email = address.Email;
+        order.Address.Country = address.Country;
+        order.Address.City = address.City;
+        order.Address.Street = address.Street;
+        order.Address.HouseNumber = address.HouseNumber;
+        order.Address.PostalCode = address.PostalCode;
+
+        try
+        {
+            await _dbContext.SaveChangesAsync();
+            return true;
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Failed to save order address for order {OrderId}.", orderId);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while saving order address for order {OrderId}.", orderId);
+            return false;
+        }
     }
 
     public async Task<OrderStatus?> GetOrderStatusAsync(Guid orderId)
@@ -277,7 +378,7 @@ public sealed class OrderService : IOrderService
             return false;
         }
 
-        if (order.Status != OrderStatus.Active && order.Status != OrderStatus.Processing && order.Status != OrderStatus.WaitingForPayment)
+        if (order.Status != OrderStatus.Active && order.Status != OrderStatus.Processing && order.Status != OrderStatus.WaitingForPayment && order.Status != OrderStatus.Address)
         {
             _logger.LogWarning("Cannot change status for order {OrderId} because it is not editable. Current status: {Status}.", orderId, order.Status);
             return false;
