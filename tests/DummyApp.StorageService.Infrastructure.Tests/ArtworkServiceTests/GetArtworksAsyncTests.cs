@@ -96,4 +96,23 @@ public sealed class GetArtworksAsyncTests : ArtworkServiceTestsBase
         Assert.Collection(result,
             item => Assert.Equal("Art 1", item.Name));
     }
+
+    [Fact]
+    public async Task ReturnsOnlyActiveArtworks_WhenIsActiveFilterIsTrueAndCreatorIdIsNull()
+    {
+        await using var context = CreateContext("GetArtworksAsync_ReturnsOnlyActiveArtworksForAllCreators");
+        var loggerMock = new Mock<ILogger<ArtworkService>>();
+        context.Artworks.AddRange(
+            new Artwork { CreatorId = "creator-1", Name = "Art 1", IsActive = true, UploadDate = DateTime.UtcNow },
+            new Artwork { CreatorId = "creator-2", Name = "Art 2", IsActive = false, UploadDate = DateTime.UtcNow }
+        );
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context, loggerMock.Object);
+
+        var result = await service.GetArtworksAsync(null, true);
+
+        Assert.Collection(result,
+            item => Assert.Equal("Art 1", item.Name));
+    }
 }
