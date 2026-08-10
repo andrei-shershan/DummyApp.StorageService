@@ -326,7 +326,7 @@ public sealed class ArtworkService : IArtworkService
             query = query.Where(a => a.CreatorId == creatorId);
         }
 
-        if (isActive.HasValue)
+        if (isActive.HasValue && isActive.Value)
         {
             query = query.Where(a => a.IsActive == isActive.Value);
         }
