@@ -23,6 +23,21 @@ builder.Services.AddSingleton(sp =>
     return new ServiceBusClient(serviceBusOptions.ConnectionString);
 });
 
+builder.Services.AddSingleton(sp =>
+{
+    var serviceBusOptions = sp.GetRequiredService<IOptions<StorageServiceSettings>>().Value.ServiceBus;
+
+    if (string.IsNullOrWhiteSpace(serviceBusOptions.CompletedOrderEventsQueueName))
+    {
+        throw new InvalidOperationException("ServiceBus:CompletedOrderEventsQueueName is not configured.");
+    }
+
+    var client = sp.GetRequiredService<ServiceBusClient>();
+    return client.CreateSender(serviceBusOptions.CompletedOrderEventsQueueName);
+});
+
+builder.Services.AddScoped<ICompletedOrderEventPublisher, CompletedOrderEventPublisher>();
+
 builder.Services.AddScoped<PaymentEventHandler>();
 builder.Services.AddHostedService<PaymentEventsBackgroundService>();
 

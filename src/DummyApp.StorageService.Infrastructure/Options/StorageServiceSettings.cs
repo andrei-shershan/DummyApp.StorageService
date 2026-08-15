@@ -20,6 +20,7 @@ public sealed class ServiceBusOptions
 {
     public string ConnectionString { get; set; } = string.Empty;
     public string PaymentEventsQueueName { get; set; } = string.Empty;
+    public string CompletedOrderEventsQueueName { get; set; } = string.Empty;
 }
 
 public sealed class ApplicationOptions

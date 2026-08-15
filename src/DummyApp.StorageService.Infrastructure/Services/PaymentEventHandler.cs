@@ -11,12 +11,18 @@ namespace DummyApp.StorageService.Infrastructure.Services;
 public sealed class PaymentEventHandler
 {
     private readonly IOrderService _orderService;
+    private readonly ICompletedOrderEventPublisher _completedOrderEventPublisher;
     private readonly ApplicationOptions _applicationOptions;
     private readonly ILogger<PaymentEventHandler> _logger;
 
-    public PaymentEventHandler(IOrderService orderService, IOptions<StorageServiceSettings> settings, ILogger<PaymentEventHandler> logger)
+    public PaymentEventHandler(
+        IOrderService orderService,
+        ICompletedOrderEventPublisher completedOrderEventPublisher,
+        IOptions<StorageServiceSettings> settings,
+        ILogger<PaymentEventHandler> logger)
     {
         _orderService = orderService;
+        _completedOrderEventPublisher = completedOrderEventPublisher;
         var configured = settings.Value;
         _applicationOptions = configured.Application;
         _logger = logger;
@@ -86,7 +92,24 @@ public sealed class PaymentEventHandler
             return false;
         }
 
-        _logger.LogInformation("Order {OrderId} status updated to Completed based on payment event.", paymentEvent.OrderId);
+        var orderSummary = await _orderService.GetOrderSummaryAsync(orderId);
+        if (orderSummary is null)
+        {
+            _logger.LogError("Order summary for order {OrderId} could not be loaded after status update.", paymentEvent.OrderId);
+            return false;
+        }
+
+        try
+        {
+            await _completedOrderEventPublisher.PublishAsync(orderId, orderSummary);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to publish completed order event for order {OrderId}.", paymentEvent.OrderId);
+            return false;
+        }
+
+        _logger.LogInformation("Order {OrderId} status updated to Completed and completed order event sent.", paymentEvent.OrderId);
         return true;
     }
 

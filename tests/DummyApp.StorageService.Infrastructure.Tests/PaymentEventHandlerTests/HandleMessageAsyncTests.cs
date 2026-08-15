@@ -16,6 +16,7 @@ public sealed class HandleMessageAsyncTests
 {
     private readonly IOptions<StorageServiceSettings> _settings;
     private readonly Mock<IOrderService> _orderServiceMock;
+    private readonly Mock<ICompletedOrderEventPublisher> _completedOrderEventPublisherMock;
     private readonly Mock<ILogger<PaymentEventHandler>> _loggerMock;
 
     public HandleMessageAsyncTests()
@@ -31,6 +32,7 @@ public sealed class HandleMessageAsyncTests
 
         _settings = Microsoft.Extensions.Options.Options.Create(settings);
         _orderServiceMock = new Mock<IOrderService>();
+        _completedOrderEventPublisherMock = new Mock<ICompletedOrderEventPublisher>();
         _loggerMock = new Mock<ILogger<PaymentEventHandler>>();
     }
 
@@ -43,12 +45,26 @@ public sealed class HandleMessageAsyncTests
             .Setup(service => service.SetOrderStatusAsync(It.IsAny<Guid>(), OrderStatus.Completed))
             .ReturnsAsync(true);
 
-        var handler = new PaymentEventHandler(_orderServiceMock.Object, _settings, _loggerMock.Object);
+        var expectedSummary = new OrderSummaryDto
+        {
+            Status = "Completed"
+        };
+
+        _orderServiceMock
+            .Setup(service => service.GetOrderSummaryAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(expectedSummary);
+
+        var handler = new PaymentEventHandler(
+            _orderServiceMock.Object,
+            _completedOrderEventPublisherMock.Object,
+            _settings,
+            _loggerMock.Object);
 
         var result = await handler.HandleMessageAsync(messageBody);
 
         Assert.True(result);
         _orderServiceMock.Verify(service => service.SetOrderStatusAsync(Guid.Parse(paymentEvent.OrderId), OrderStatus.Completed), Times.Once);
+        _completedOrderEventPublisherMock.Verify(publisher => publisher.PublishAsync(Guid.Parse(paymentEvent.OrderId), expectedSummary), Times.Once);
     }
 
     [Fact]
@@ -56,12 +72,17 @@ public sealed class HandleMessageAsyncTests
     {
         var paymentEvent = new PaymentEvent(Guid.NewGuid().ToString(), "other-site", "paid", "checkout.session.completed");
         var messageBody = JsonSerializer.Serialize(paymentEvent);
-        var handler = new PaymentEventHandler(_orderServiceMock.Object, _settings, _loggerMock.Object);
+        var handler = new PaymentEventHandler(
+            _orderServiceMock.Object,
+            _completedOrderEventPublisherMock.Object,
+            _settings,
+            _loggerMock.Object);
 
         var result = await handler.HandleMessageAsync(messageBody);
 
         Assert.False(result);
         _orderServiceMock.Verify(service => service.SetOrderStatusAsync(It.IsAny<Guid>(), It.IsAny<OrderStatus>()), Times.Never);
+        _completedOrderEventPublisherMock.Verify(publisher => publisher.PublishAsync(It.IsAny<Guid>(), It.IsAny<OrderSummaryDto>()), Times.Never);
     }
 
     [Fact]
@@ -69,18 +90,27 @@ public sealed class HandleMessageAsyncTests
     {
         var paymentEvent = new PaymentEvent(Guid.NewGuid().ToString(), "local", "paid", "payment.failed");
         var messageBody = JsonSerializer.Serialize(paymentEvent);
-        var handler = new PaymentEventHandler(_orderServiceMock.Object, _settings, _loggerMock.Object);
+        var handler = new PaymentEventHandler(
+            _orderServiceMock.Object,
+            _completedOrderEventPublisherMock.Object,
+            _settings,
+            _loggerMock.Object);
 
         var result = await handler.HandleMessageAsync(messageBody);
 
         Assert.False(result);
         _orderServiceMock.Verify(service => service.SetOrderStatusAsync(It.IsAny<Guid>(), It.IsAny<OrderStatus>()), Times.Never);
+        _completedOrderEventPublisherMock.Verify(publisher => publisher.PublishAsync(It.IsAny<Guid>(), It.IsAny<OrderSummaryDto>()), Times.Never);
     }
 
     [Fact]
     public async Task HandleMessageAsync_ReturnsFalse_WhenBodyIsEmpty()
     {
-        var handler = new PaymentEventHandler(_orderServiceMock.Object, _settings, _loggerMock.Object);
+        var handler = new PaymentEventHandler(
+            _orderServiceMock.Object,
+            _completedOrderEventPublisherMock.Object,
+            _settings,
+            _loggerMock.Object);
 
         var result = await handler.HandleMessageAsync(string.Empty);
 
