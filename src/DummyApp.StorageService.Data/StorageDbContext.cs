@@ -17,6 +17,7 @@ public sealed class StorageDbContext : DbContext
     public DbSet<OrderItem> OrderItems { get; set; } = null!;
     public DbSet<PrintSize> PrintSizes { get; set; } = null!;
     public DbSet<Price> Prices { get; set; } = null!;
+    public DbSet<VerificationCode> VerificationCodes { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -154,6 +155,30 @@ public sealed class StorageDbContext : DbContext
 
             entity.HasIndex(i => i.PrintSizeId);
             entity.HasIndex(i => i.PriceId);
+        });
+
+        modelBuilder.Entity<VerificationCode>(entity =>
+        {
+            entity.Property(v => v.Email)
+                .IsRequired()
+                .HasMaxLength(255);
+
+            entity.Property(v => v.Code)
+                .IsRequired()
+                .HasMaxLength(6);
+
+            entity.Property(v => v.ExpiresAt)
+                .IsRequired();
+
+            entity.Property(v => v.IsUsed)
+                .IsRequired();
+
+            entity.Property(v => v.CreatedAt)
+                .IsRequired();
+
+            entity.HasIndex(v => new { v.Email, v.Code });
+            entity.HasIndex(v => v.Email);
+            entity.HasIndex(v => v.ExpiresAt);
         });
     }
 }
