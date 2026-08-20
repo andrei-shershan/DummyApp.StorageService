@@ -18,6 +18,7 @@ public sealed class Order
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? CompletedAt { get; set; }
     public OrderStatus Status { get; set; } = OrderStatus.Active;
+    public string Email { get; set; } = string.Empty;
     public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
     public OrderAddress? Address { get; set; }
 }

@@ -71,6 +71,10 @@ public sealed class StorageDbContext : DbContext
                 .HasMaxLength(20)
                 .HasConversion<string>();
 
+            entity.Property(o => o.Email)
+                .IsRequired()
+                .HasMaxLength(255);
+
             entity.HasMany(o => o.Items)
                 .WithOne(i => i.Order)
                 .HasForeignKey(i => i.OrderId)
