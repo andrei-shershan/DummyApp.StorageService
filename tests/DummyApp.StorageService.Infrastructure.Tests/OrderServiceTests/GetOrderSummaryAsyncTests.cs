@@ -40,7 +40,7 @@ public sealed class GetOrderSummaryAsyncTests : OrderServiceTestsBase
         await using var context = CreateContext("GetOrderSummaryAsync_ReturnsSummary");
         var artwork = new Artwork { Id = Guid.NewGuid(), CreatorId = "creator", Name = "Test", Description = "Desc", CreationDate = DateTime.UtcNow, UploadDate = DateTime.UtcNow, ImgUrl = "img", ThumbnailUrl = "thumb", IsActive = true };
         var orderId = Guid.NewGuid();
-        var order = new Order { Id = orderId, Status = OrderStatus.Active };
+        var order = new Order { Id = orderId, Status = OrderStatus.Active, Email = "customer@example.com" };
         order.Items.Add(new OrderItem { OrderId = orderId, ArtworkId = artwork.Id, Quantity = 2 });
 
         await context.Artworks.AddAsync(artwork);
@@ -55,5 +55,6 @@ public sealed class GetOrderSummaryAsyncTests : OrderServiceTestsBase
         Assert.NotNull(result);
         Assert.Equal(orderId, result!.Items.Single().OrderId);
         Assert.Equal(order.Status.ToString(), result.Status);
+        Assert.Equal(order.Email, result.Email);
     }
 }

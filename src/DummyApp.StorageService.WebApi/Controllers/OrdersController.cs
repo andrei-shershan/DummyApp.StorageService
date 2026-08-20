@@ -73,7 +73,7 @@ public sealed class OrdersController : ControllerBase
             return NotFound();
         }
 
-        return Ok(new OrderSummaryResponse { Items = summary.Items, Status = summary.Status, Address = summary.Address is not null ? new OrderAddressResponse
+        return Ok(new OrderSummaryResponse { Items = summary.Items, Status = summary.Status, Email = summary.Email, Address = summary.Address is not null ? new OrderAddressResponse
         {
             FirstName = summary.Address.FirstName,
             LastName = summary.Address.LastName,

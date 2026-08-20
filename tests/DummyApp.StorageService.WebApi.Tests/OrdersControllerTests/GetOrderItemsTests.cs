@@ -68,6 +68,7 @@ public sealed class GetOrderSummaryTests
         var okResult = Assert.IsType<OkObjectResult>(result);
         var returnedSummary = Assert.IsType<OrderSummaryResponse>(okResult.Value);
         Assert.Equal(expected.Status, returnedSummary.Status);
+        Assert.Equal(expected.Email, returnedSummary.Email);
         Assert.Equal(expected.Items, returnedSummary.Items);
     }
 }

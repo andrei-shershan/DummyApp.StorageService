@@ -50,6 +50,7 @@ public sealed class SaveOrderAddressAsyncTests : OrderServiceTestsBase
         var order = await context.Orders.Include(o => o.Address).FirstOrDefaultAsync(o => o.Id == orderId);
         Assert.NotNull(order);
         Assert.Equal(OrderStatus.Address, order!.Status);
+        Assert.Equal(address.Email, order.Email);
         Assert.NotNull(order.Address);
         Assert.Equal(address.Email, order.Address.Email);
     }
@@ -73,6 +74,7 @@ public sealed class SaveOrderAddressAsyncTests : OrderServiceTestsBase
         var updatedOrder = await context.Orders.Include(o => o.Address).FirstOrDefaultAsync(o => o.Id == orderId);
         Assert.NotNull(updatedOrder);
         Assert.Equal(OrderStatus.Address, updatedOrder!.Status);
+        Assert.Equal(address.Email, updatedOrder.Email);
         Assert.Equal(address.Email, updatedOrder.Address!.Email);
         Assert.Equal(address.City, updatedOrder.Address.City);
     }

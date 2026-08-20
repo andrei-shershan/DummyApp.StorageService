@@ -247,6 +247,7 @@ public sealed class OrderService : IOrderService
         {
             Items = items,
             Status = order.Status.ToString(),
+            Email = order.Email,
             Address = order.Address is not null ? new OrderAddressDto
             {
                 FirstName = order.Address.FirstName,
@@ -318,6 +319,7 @@ public sealed class OrderService : IOrderService
 
         order.Status = OrderStatus.Address;
         order.CompletedAt = null;
+        order.Email = address.Email;
 
         if (order.Address is null)
         {
