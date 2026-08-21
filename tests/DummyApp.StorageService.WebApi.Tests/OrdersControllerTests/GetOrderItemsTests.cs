@@ -14,7 +14,8 @@ public sealed class GetOrderSummaryTests
     public async Task GetOrderSummary_ReturnsBadRequest_WhenOrderIdIsEmpty()
     {
         var orderService = new Mock<IOrderService>();
-        var controller = new OrdersController(orderService.Object);
+        var completedOrdersService = new Mock<ICompletedOrdersService>();
+        var controller = new OrdersController(orderService.Object, completedOrdersService.Object);
 
         var result = await controller.GetOrderSummary(Guid.Empty);
 
@@ -28,8 +29,9 @@ public sealed class GetOrderSummaryTests
     {
         var orderService = new Mock<IOrderService>();
         orderService.Setup(x => x.GetOrderSummaryAsync(It.IsAny<Guid>())).ReturnsAsync((OrderSummaryDto?)null);
+        var completedOrdersService = new Mock<ICompletedOrdersService>();
 
-        var controller = new OrdersController(orderService.Object);
+        var controller = new OrdersController(orderService.Object, completedOrdersService.Object);
 
         var result = await controller.GetOrderSummary(Guid.NewGuid());
 
@@ -60,8 +62,9 @@ public sealed class GetOrderSummaryTests
 
         var orderService = new Mock<IOrderService>();
         orderService.Setup(x => x.GetOrderSummaryAsync(orderId)).ReturnsAsync(expected);
+        var completedOrdersService = new Mock<ICompletedOrdersService>();
 
-        var controller = new OrdersController(orderService.Object);
+        var controller = new OrdersController(orderService.Object, completedOrdersService.Object);
 
         var result = await controller.GetOrderSummary(orderId);
 

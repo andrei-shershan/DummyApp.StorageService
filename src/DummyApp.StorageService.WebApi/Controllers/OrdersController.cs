@@ -13,10 +13,12 @@ namespace DummyApp.StorageService.WebApi.Controllers;
 public sealed class OrdersController : ControllerBase
 {
     private readonly IOrderService _orderService;
+    private readonly ICompletedOrdersService _completedOrdersService;
 
-    public OrdersController(IOrderService orderService)
+    public OrdersController(IOrderService orderService, ICompletedOrdersService completedOrdersService)
     {
         _orderService = orderService;
+        _completedOrdersService = completedOrdersService;
     }
 
     [HttpPost("{orderId}/items")]
@@ -73,7 +75,7 @@ public sealed class OrdersController : ControllerBase
             return NotFound();
         }
 
-        return Ok(new OrderSummaryResponse { Items = summary.Items, Status = summary.Status, Email = summary.Email, Address = summary.Address is not null ? new OrderAddressResponse
+        return Ok(new OrderSummaryResponse { OrderId = summary.OrderId, Items = summary.Items, Status = summary.Status, Email = summary.Email, Address = summary.Address is not null ? new OrderAddressResponse
         {
             FirstName = summary.Address.FirstName,
             LastName = summary.Address.LastName,
@@ -85,6 +87,44 @@ public sealed class OrdersController : ControllerBase
             HouseNumber = summary.Address.HouseNumber,
             PostalCode = summary.Address.PostalCode
         } : null });
+    }
+
+    [HttpGet("completed/{token}")]
+    [ProducesResponseType(typeof(IEnumerable<OrderSummaryResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetCompletedOrders([FromRoute] Guid token)
+    {
+        if (token == Guid.Empty)
+        {
+            return BadRequest("Completed orders token is required.");
+        }
+
+        var email = await _completedOrdersService.GetEmailByTokenAsync(token);
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return NotFound();
+        }
+
+        var summaries = await _orderService.GetOrdersByEmailAsync(email);
+        return Ok(summaries.Select(summary => new OrderSummaryResponse
+        {
+            OrderId = summary.OrderId,
+            Items = summary.Items,
+            Status = summary.Status,
+            Email = summary.Email,
+            Address = summary.Address is not null ? new OrderAddressResponse
+            {
+                FirstName = summary.Address.FirstName,
+                LastName = summary.Address.LastName,
+                Phone = summary.Address.Phone,
+                Email = summary.Address.Email,
+                Country = summary.Address.Country,
+                City = summary.Address.City,
+                Street = summary.Address.Street,
+                HouseNumber = summary.Address.HouseNumber,
+                PostalCode = summary.Address.PostalCode
+            } : null
+        }));
     }
 
     [HttpGet("{orderId}/address")]

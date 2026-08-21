@@ -50,4 +50,19 @@ public sealed class CompletedOrdersService : ICompletedOrdersService
             return false;
         }
     }
+
+    public async Task<string?> GetEmailByTokenAsync(Guid token)
+    {
+        if (token == Guid.Empty)
+        {
+            _logger.LogWarning("Invalid completed orders token supplied to GetEmailByTokenAsync.");
+            return null;
+        }
+
+        var completedOrdersToken = await _dbContext.CompletedOrdersTokens
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Token == token && t.ExpiresAt >= DateTime.UtcNow);
+
+        return completedOrdersToken?.Email;
+    }
 }

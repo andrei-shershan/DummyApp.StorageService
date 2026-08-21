@@ -14,7 +14,8 @@ public sealed class GetOrderAddressTests
     public async Task GetOrderAddress_ReturnsBadRequest_WhenOrderIdIsInvalid()
     {
         var orderService = new Mock<IOrderService>();
-        var controller = new OrdersController(orderService.Object);
+        var completedOrdersService = new Mock<ICompletedOrdersService>();
+        var controller = new OrdersController(orderService.Object, completedOrdersService.Object);
 
         var result = await controller.GetOrderAddress(Guid.Empty);
 
@@ -28,8 +29,9 @@ public sealed class GetOrderAddressTests
         var orderId = Guid.NewGuid();
         var orderService = new Mock<IOrderService>();
         orderService.Setup(x => x.GetOrderAddressAsync(orderId)).ReturnsAsync((OrderAddressDto?)null);
+        var completedOrdersService = new Mock<ICompletedOrdersService>();
 
-        var controller = new OrdersController(orderService.Object);
+        var controller = new OrdersController(orderService.Object, completedOrdersService.Object);
         var result = await controller.GetOrderAddress(orderId);
 
         Assert.IsType<NotFoundResult>(result);
@@ -42,8 +44,9 @@ public sealed class GetOrderAddressTests
         var address = new OrderAddressDto { FirstName = "John", LastName = "Doe", Email = "john.doe@example.com", Phone = "+48123123123", Country = "PL", City = "Warsaw", Street = "Main", HouseNumber = "10", PostalCode = "00-001" };
         var orderService = new Mock<IOrderService>();
         orderService.Setup(x => x.GetOrderAddressAsync(orderId)).ReturnsAsync(address);
+        var completedOrdersService = new Mock<ICompletedOrdersService>();
 
-        var controller = new OrdersController(orderService.Object);
+        var controller = new OrdersController(orderService.Object, completedOrdersService.Object);
         var result = await controller.GetOrderAddress(orderId);
 
         var okResult = Assert.IsType<OkObjectResult>(result);
