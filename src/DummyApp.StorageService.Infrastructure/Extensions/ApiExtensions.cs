@@ -12,6 +12,7 @@ public static class ApiExtensions
         services.AddScoped<IPrintSizeService, PrintSizeService>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IVerificationCodeService, VerificationCodeService>();
+        services.AddScoped<ICompletedOrdersService, CompletedOrdersService>();
         services.AddOpenApi();
         return services;
     }

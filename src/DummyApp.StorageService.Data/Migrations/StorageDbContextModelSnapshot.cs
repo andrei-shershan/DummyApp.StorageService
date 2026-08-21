@@ -279,6 +279,36 @@ namespace DummyApp.StorageService.Data.Migrations
                     b.ToTable("VerificationCodes");
                 });
 
+            modelBuilder.Entity("DummyApp.StorageService.Data.Models.CompletedOrdersToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("Token")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.HasIndex("Email");
+
+                    b.ToTable("CompletedOrdersTokens");
+                });
+
             modelBuilder.Entity("DummyApp.StorageService.Data.Models.Artwork", b =>
                 {
                     b.HasOne("DummyApp.StorageService.Data.Models.Series", "Series")

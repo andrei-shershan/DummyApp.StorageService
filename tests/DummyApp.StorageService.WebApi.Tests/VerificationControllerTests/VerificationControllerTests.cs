@@ -125,7 +125,9 @@ public sealed class VerificationControllerTests
 
     private static VerificationController CreateController(Mock<IVerificationCodeService> serviceMock, Mock<ILogger<VerificationController>> loggerMock)
     {
-        return new VerificationController(serviceMock.Object, loggerMock.Object)
+        var completedOrdersServiceMock = new Mock<ICompletedOrdersService>();
+
+        return new VerificationController(serviceMock.Object, completedOrdersServiceMock.Object, loggerMock.Object)
         {
             ControllerContext = new ControllerContext
             {

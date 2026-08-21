@@ -11,11 +11,16 @@ namespace DummyApp.StorageService.WebApi.Controllers;
 public sealed class VerificationController : ControllerBase
 {
     private readonly IVerificationCodeService _verificationCodeService;
+    private readonly ICompletedOrdersService _completedOrdersService;
     private readonly ILogger<VerificationController> _logger;
 
-    public VerificationController(IVerificationCodeService verificationCodeService, ILogger<VerificationController> logger)
+    public VerificationController(
+        IVerificationCodeService verificationCodeService,
+        ICompletedOrdersService completedOrdersService,
+        ILogger<VerificationController> logger)
     {
         _verificationCodeService = verificationCodeService;
+        _completedOrdersService = completedOrdersService;
         _logger = logger;
     }
 
@@ -40,6 +45,33 @@ public sealed class VerificationController : ControllerBase
         {
             _logger.LogError("Failed to create verification code record for email {Email}.", normalizedEmail);
             return BadRequest("Unable to create verification code.");
+        }
+
+        return Ok();
+    }
+
+    [HttpPost("completed-orders")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> CreateCompletedOrdersToken([FromBody] CreateCompletedOrdersTokenRequest request)
+    {
+        if (request is null || string.IsNullOrWhiteSpace(request.Email) || request.Token == Guid.Empty)
+        {
+            return BadRequest("Email and token are required.");
+        }
+
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        if (!normalizedEmail.Contains('@') || request.ExpiresAt <= DateTime.UtcNow)
+        {
+            return BadRequest("A valid email and future expiration are required.");
+        }
+
+        var created = await _completedOrdersService.CreateCompletedOrdersTokenAsync(normalizedEmail, request.Token, request.ExpiresAt);
+        if (!created)
+        {
+            _logger.LogError("Failed to create completed orders token for email {Email}.", normalizedEmail);
+            return StatusCode(StatusCodes.Status500InternalServerError, "Unable to persist completed orders token.");
         }
 
         return Ok();
