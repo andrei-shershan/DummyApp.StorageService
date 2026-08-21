@@ -1,3 +1,4 @@
+using System.Linq;
 using DummyApp.StorageService.Data;
 using DummyApp.StorageService.Data.Models;
 using DummyApp.StorageService.Infrastructure.Models;
@@ -245,6 +246,7 @@ public sealed class OrderService : IOrderService
 
         return new OrderSummaryDto
         {
+            OrderId = order.Id,
             Items = items,
             Status = order.Status.ToString(),
             Email = order.Email,
@@ -261,6 +263,69 @@ public sealed class OrderService : IOrderService
                 PostalCode = order.Address.PostalCode
             } : null
         };
+    }
+
+    public async Task<IEnumerable<OrderSummaryDto>> GetOrdersByEmailAsync(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            _logger.LogWarning("Invalid email supplied to GetOrdersByEmailAsync.");
+            return Array.Empty<OrderSummaryDto>();
+        }
+
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+
+        var orders = await _dbContext.Orders
+            .AsNoTracking()
+            .Include(o => o.Address)
+            .Include(o => o.Items)
+                .ThenInclude(i => i.Artwork)
+            .Include(o => o.Items)
+                .ThenInclude(i => i.PrintSize)
+            .Include(o => o.Items)
+                .ThenInclude(i => i.Price)
+            .Where(o => o.Email.ToLower() == normalizedEmail)
+            .ToListAsync();
+
+        if (!orders.Any())
+        {
+            return Array.Empty<OrderSummaryDto>();
+        }
+
+        return orders.Select(order => new OrderSummaryDto
+        {
+            OrderId = order.Id,
+            Status = order.Status.ToString(),
+            Email = order.Email,
+            Address = order.Address is not null ? new OrderAddressDto
+            {
+                FirstName = order.Address.FirstName,
+                LastName = order.Address.LastName,
+                Phone = order.Address.Phone,
+                Email = order.Address.Email,
+                Country = order.Address.Country,
+                City = order.Address.City,
+                Street = order.Address.Street,
+                HouseNumber = order.Address.HouseNumber,
+                PostalCode = order.Address.PostalCode
+            } : null,
+            Items = order.Items
+                .Select(orderItem => new OrderItemDto
+                {
+                    OrderId = orderItem.OrderId,
+                    ArtworkId = orderItem.ArtworkId,
+                    Quantity = orderItem.Quantity,
+                    Name = orderItem.Artwork!.Name,
+                    Description = orderItem.Artwork.Description,
+                    ImgUrl = orderItem.Artwork.ImgUrl,
+                    ThumbnailUrl = orderItem.Artwork.ThumbnailUrl,
+                    PrintSizeId = orderItem.PrintSizeId,
+                    PrintSizeName = orderItem.PrintSize != null ? orderItem.PrintSize.Name : string.Empty,
+                    PriceId = orderItem.PriceId,
+                    PriceValue = orderItem.PriceValue ?? (orderItem.Price != null ? orderItem.Price.Value : (decimal?)null)
+                })
+                .ToList()
+        }).ToList();
     }
 
     public async Task<OrderAddressDto?> GetOrderAddressAsync(Guid orderId)
