@@ -18,6 +18,7 @@ public sealed class StorageDbContext : DbContext
     public DbSet<PrintSize> PrintSizes { get; set; } = null!;
     public DbSet<Price> Prices { get; set; } = null!;
     public DbSet<VerificationCode> VerificationCodes { get; set; } = null!;
+    public DbSet<CompletedOrdersToken> CompletedOrdersTokens { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -179,6 +180,27 @@ public sealed class StorageDbContext : DbContext
             entity.HasIndex(v => new { v.Email, v.Code });
             entity.HasIndex(v => v.Email);
             entity.HasIndex(v => v.ExpiresAt);
+        });
+
+        modelBuilder.Entity<CompletedOrdersToken>(entity =>
+        {
+            entity.Property(c => c.Token)
+                .IsRequired()
+                .HasColumnType("char(36)");
+
+            entity.Property(c => c.Email)
+                .IsRequired()
+                .HasMaxLength(255);
+
+            entity.Property(c => c.ExpiresAt)
+                .IsRequired();
+
+            entity.Property(c => c.CreatedAt)
+                .IsRequired();
+
+            entity.HasIndex(c => c.Token)
+                .IsUnique();
+            entity.HasIndex(c => c.Email);
         });
     }
 }
