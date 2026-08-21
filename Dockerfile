@@ -21,18 +21,21 @@ EXPOSE 8081
 
 # This stage is used to build the service project
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-ARG BUILD_CONFIGURATION=Release
+ARG BUILD_CONFIGURATION=Debug
 WORKDIR /src
 COPY ["src/DummyApp.StorageService.WebApi/DummyApp.StorageService.WebApi.csproj", "src/DummyApp.StorageService.WebApi/"]
 COPY ["src/DummyApp.StorageService.Data/DummyApp.StorageService.Data.csproj", "src/DummyApp.StorageService.Data/"]
+COPY ["src/DummyApp.StorageService.Infrastructure/DummyApp.StorageService.Infrastructure.csproj", "src/DummyApp.StorageService.Infrastructure/"]
 RUN dotnet restore "./src/DummyApp.StorageService.WebApi/DummyApp.StorageService.WebApi.csproj"
-COPY . .
+COPY ["src/DummyApp.StorageService.WebApi/", "src/DummyApp.StorageService.WebApi/"]
+COPY ["src/DummyApp.StorageService.Data/", "src/DummyApp.StorageService.Data/"]
+COPY ["src/DummyApp.StorageService.Infrastructure/", "src/DummyApp.StorageService.Infrastructure/"]
 WORKDIR "/src/src/DummyApp.StorageService.WebApi"
 RUN dotnet build "./DummyApp.StorageService.WebApi.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage
 FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
+ARG BUILD_CONFIGURATION=Debug
 RUN dotnet publish "./DummyApp.StorageService.WebApi.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
