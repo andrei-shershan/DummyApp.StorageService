@@ -9,6 +9,7 @@ public static class ApiExtensions
     {
         services.AddControllers();
         services.AddScoped<IArtworkService, ArtworkService>();
+        services.AddScoped<ITagService, TagService>();
         services.AddScoped<IPrintSizeService, PrintSizeService>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IVerificationCodeService, VerificationCodeService>();
