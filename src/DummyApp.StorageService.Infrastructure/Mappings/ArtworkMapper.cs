@@ -17,8 +17,7 @@ internal static class ArtworkMapper
             UploadDate = artwork.UploadDate,
             ImgUrl = artwork.ImgUrl,
             ThumbnailUrl = artwork.ThumbnailUrl,
-            IsActive = artwork.IsActive,
-            SeriesName = artwork.Series?.Name
+            IsActive = artwork.IsActive
         };
     }
 
