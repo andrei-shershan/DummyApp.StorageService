@@ -11,6 +11,8 @@ public sealed class StorageDbContext : DbContext
     }
 
     public DbSet<Artwork> Artworks { get; set; } = null!;
+    public DbSet<Tag> Tags { get; set; } = null!;
+    public DbSet<ArtworkTag> ArtworkTags { get; set; } = null!;
     public DbSet<Order> Orders { get; set; } = null!;
     public DbSet<OrderAddress> OrderAddresses { get; set; } = null!;
     public DbSet<OrderItem> OrderItems { get; set; } = null!;
@@ -40,6 +42,40 @@ public sealed class StorageDbContext : DbContext
             entity.Property(a => a.Name)
                 .IsRequired()
                 .HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<Tag>(entity =>
+        {
+            entity.Property(t => t.Name)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(t => t.Type)
+                .IsRequired()
+                .HasMaxLength(20)
+                .HasConversion<string>();
+
+            entity.HasIndex(t => new { t.Name, t.Type })
+                .IsUnique();
+        });
+
+        modelBuilder.Entity<ArtworkTag>(entity =>
+        {
+            entity.HasKey(at => new { at.ArtworkId, at.TagId });
+
+            entity.HasOne(at => at.Artwork)
+                .WithMany()
+                .HasForeignKey(at => at.ArtworkId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired();
+
+            entity.HasOne(at => at.Tag)
+                .WithMany(t => t.ArtworkTags)
+                .HasForeignKey(at => at.TagId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired();
+
+            entity.HasIndex(at => at.TagId);
         });
 
         modelBuilder.Entity<Order>(entity =>
