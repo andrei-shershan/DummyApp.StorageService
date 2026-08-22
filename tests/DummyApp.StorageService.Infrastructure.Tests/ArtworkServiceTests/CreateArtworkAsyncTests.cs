@@ -27,7 +27,7 @@ public sealed class CreateArtworkAsyncTests : ArtworkServiceTestsBase
         await using var context = CreateContext("CreateArtworkAsync_ValidArtwork");
         var loggerMock = new Mock<ILogger<ArtworkService>>();
         var service = CreateService(context, loggerMock.Object);
-        var request = new ArtworkDto
+        var request = new CreateArtworkRequest
         {
             CreatorId = "creator-1",
             Name = "Artwork name",
@@ -51,5 +51,77 @@ public sealed class CreateArtworkAsyncTests : ArtworkServiceTestsBase
         Assert.Equal(request.ThumbnailUrl.Trim(), result.ThumbnailUrl);
         Assert.Equal(request.IsActive, result.IsActive);
         Assert.NotEqual(Guid.Empty, result.Id);
+    }
+
+    [Fact]
+    public async Task WithNewTagMatchingExistingTag_ReturnsNull_AndLogsWarning()
+    {
+        await using var context = CreateContext("CreateArtworkAsync_NewTagMatchesExistingTag");
+        var existingTag = new DummyApp.StorageService.Data.Models.Tag
+        {
+            Name = "Existing Tag",
+            Type = DummyApp.StorageService.Data.Models.TagType.None
+        };
+
+        context.Tags.Add(existingTag);
+        await context.SaveChangesAsync();
+
+        var loggerMock = new Mock<ILogger<ArtworkService>>();
+        var service = CreateService(context, loggerMock.Object);
+        var request = new CreateArtworkRequest
+        {
+            CreatorId = "creator-1",
+            Name = "Artwork name",
+            Description = "Description",
+            CreationDate = new DateTime(2024, 1, 1),
+            UploadDate = DateTime.UtcNow,
+            ImgUrl = "https://example.com/img.jpg",
+            ThumbnailUrl = "https://example.com/small.jpg",
+            IsActive = true,
+            NewTags = new[]
+            {
+                new NewTagRequest { Name = "Existing Tag", Type = "None" }
+            }
+        };
+
+        var result = await service.CreateArtworkAsync(request);
+
+        Assert.Null(result);
+        loggerMock.VerifyLog(LogLevel.Warning, "Artwork create request contains a new tag that already exists", Times.Once());
+    }
+
+    [Fact]
+    public async Task WithExistingSeriesTag_SavesAndReturnsArtwork()
+    {
+        await using var context = CreateContext("CreateArtworkAsync_WithExistingSeriesTag");
+        var existingTag = new DummyApp.StorageService.Data.Models.Tag
+        {
+            Name = "Series Tag",
+            Type = DummyApp.StorageService.Data.Models.TagType.Series
+        };
+
+        context.Tags.Add(existingTag);
+        await context.SaveChangesAsync();
+
+        var loggerMock = new Mock<ILogger<ArtworkService>>();
+        var service = CreateService(context, loggerMock.Object);
+        var request = new CreateArtworkRequest
+        {
+            CreatorId = "creator-1",
+            Name = "Artwork name",
+            Description = "Description",
+            CreationDate = new DateTime(2024, 1, 1),
+            UploadDate = DateTime.UtcNow,
+            ImgUrl = "https://example.com/img.jpg",
+            ThumbnailUrl = "https://example.com/small.jpg",
+            IsActive = true,
+            ExistingTagIds = new[] { existingTag.Id }
+        };
+
+        var result = await service.CreateArtworkAsync(request);
+
+        Assert.NotNull(result);
+        Assert.NotEqual(Guid.Empty, result!.Id);
+        Assert.Contains(context.ArtworkTags, at => at.ArtworkId == result.Id && at.TagId == existingTag.Id);
     }
 }
