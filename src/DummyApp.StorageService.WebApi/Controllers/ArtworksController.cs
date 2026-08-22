@@ -1,4 +1,6 @@
-﻿using DummyApp.StorageService.Infrastructure.Models;using DummyApp.StorageService.Infrastructure.Models;using DummyApp.StorageService.Infrastructure.Services;
+﻿using System.Linq;
+using DummyApp.StorageService.Infrastructure.Models;
+using DummyApp.StorageService.Infrastructure.Services;
 using DummyApp.StorageService.WebApi.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +23,7 @@ public class ArtworksController : ControllerBase
     [ProducesResponseType(typeof(ArtworkDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ArtworkDto>> CreateArtwork([FromBody] ArtworkDto request)
+    public async Task<ActionResult<ArtworkDto>> CreateArtwork([FromBody] CreateArtworkRequest request)
     {
         if (request is null)
         {
@@ -31,6 +33,12 @@ public class ArtworksController : ControllerBase
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
+        }
+
+        var totalTagCount = (request.ExistingTagIds?.Count() ?? 0) + (request.NewTags?.Count() ?? 0);
+        if (totalTagCount > 10)
+        {
+            return BadRequest("A maximum of 10 tags is allowed.");
         }
 
         var artwork = await _artworkService.CreateArtworkAsync(request);

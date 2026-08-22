@@ -35,4 +35,19 @@ internal static class ArtworkMapper
             IsActive = request.IsActive
         };
     }
+
+    public static Artwork ToEntity(this CreateArtworkRequest request)
+    {
+        return new Artwork
+        {
+            CreatorId = request.CreatorId,
+            Name = request.Name.Trim(),
+            Description = request.Description?.Trim() ?? string.Empty,
+            CreationDate = request.CreationDate,
+            UploadDate = request.UploadDate == default ? DateTime.UtcNow : request.UploadDate,
+            ImgUrl = request.ImgUrl?.Trim() ?? string.Empty,
+            ThumbnailUrl = request.ThumbnailUrl?.Trim() ?? string.Empty,
+            IsActive = request.IsActive
+        };
+    }
 }

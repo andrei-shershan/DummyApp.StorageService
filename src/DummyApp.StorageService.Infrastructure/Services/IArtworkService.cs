@@ -6,7 +6,7 @@ namespace DummyApp.StorageService.Infrastructure.Services;
 
 public interface IArtworkService
 {
-    Task<ArtworkDto?> CreateArtworkAsync(ArtworkDto request);
+    Task<ArtworkDto?> CreateArtworkAsync(CreateArtworkRequest request);
     Task<ArtworkDto?> UpdateArtworkAsync(Guid id, UpdateArtworkDto request);
     Task<ArtworkDto?> UpdateArtworkIsActiveAsync(Guid id, bool isActive);
     Task<ArtworkDto?> GetArtworkByIdAsync(Guid id, bool activeOnly = true);
