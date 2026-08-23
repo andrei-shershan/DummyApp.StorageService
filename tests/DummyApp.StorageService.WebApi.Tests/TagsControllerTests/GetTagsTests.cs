@@ -48,4 +48,42 @@ public sealed class GetTagsTests
 
         Assert.Empty(actual);
     }
+
+    [Fact]
+    public async Task GetTagsForActiveArtworks_ReturnsOkWithTagList()
+    {
+        var expected = new[]
+        {
+            new TagDto { Id = Guid.NewGuid(), Name = "Filter Tag 1", Type = "None" },
+            new TagDto { Id = Guid.NewGuid(), Name = "Filter Tag 2", Type = "Series" }
+        };
+
+        var tagService = new Mock<ITagService>();
+        tagService.Setup(x => x.GetTagsForActiveArtworksAsync()).ReturnsAsync(expected);
+
+        var controller = new TagsController(tagService.Object);
+
+        var result = await controller.GetTagsForActiveArtworks();
+
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var actual = Assert.IsAssignableFrom<IEnumerable<TagDto>>(okResult.Value);
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Fact]
+    public async Task GetTagsForActiveArtworks_ReturnsOkWithEmptyList_WhenNoTags()
+    {
+        var tagService = new Mock<ITagService>();
+        tagService.Setup(x => x.GetTagsForActiveArtworksAsync()).ReturnsAsync(Array.Empty<TagDto>());
+
+        var controller = new TagsController(tagService.Object);
+
+        var result = await controller.GetTagsForActiveArtworks();
+
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var actual = Assert.IsAssignableFrom<IEnumerable<TagDto>>(okResult.Value);
+
+        Assert.Empty(actual);
+    }
 }

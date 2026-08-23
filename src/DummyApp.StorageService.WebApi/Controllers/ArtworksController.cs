@@ -60,9 +60,9 @@ public class ArtworksController : ControllerBase
 
     [HttpGet("page")]
     [ProducesResponseType(typeof(PaginatedResult<ArtworkDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PaginatedResult<ArtworkDto>>> GetArtworksPage([FromQuery] string? creatorId, [FromQuery] bool? isActive, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+    public async Task<ActionResult<PaginatedResult<ArtworkDto>>> GetArtworksPage([FromQuery] string? creatorId, [FromQuery] bool? isActive, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] IEnumerable<Guid>? tagIds = null)
     {
-        var result = await _artworkService.GetArtworksPageAsync(creatorId, isActive, pageNumber, pageSize);
+        var result = await _artworkService.GetArtworksPageAsync(creatorId, isActive, pageNumber, pageSize, tagIds);
         return Ok(result);
     }
 

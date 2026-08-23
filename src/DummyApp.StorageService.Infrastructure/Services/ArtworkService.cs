@@ -27,93 +27,50 @@ public sealed class ArtworkService : IArtworkService
             return null;
         }
 
-        var existingTagIds = request.ExistingTagIds?.Where(id => id != Guid.Empty).Distinct().ToArray() ?? Array.Empty<Guid>();
-        var newTags = request.NewTags?.Where(tag => !string.IsNullOrWhiteSpace(tag.Name) && !string.IsNullOrWhiteSpace(tag.Type)).ToArray() ?? Array.Empty<NewTagRequest>();
+        var existingTagIds = request.ExistingTagIds?.ToArray() ?? Array.Empty<Guid>();
 
-        if (existingTagIds.Length + newTags.Length > 10)
+        var existingDbTags = new List<Tag>();
+        if (existingTagIds.Length > 0)
         {
-            _logger.LogWarning("Artwork create request contains more than 10 tags.");
-            return null;
-        }
-
-        var existingTags = existingTagIds.Length > 0
-            ? await _dbContext.Tags.Where(t => existingTagIds.Contains(t.Id)).ToListAsync()
-            : new List<Tag>();
-
-        if (existingTagIds.Length != existingTags.Count)
-        {
-            _logger.LogWarning("Artwork create request contains invalid existing tag ids.");
-            return null;
-        }
-
-        var normalizedNewTags = newTags
-            .Select(tag => new { Name = tag.Name.Trim(), Type = tag.Type.Trim() })
-            .ToArray();
-
-        if (normalizedNewTags.GroupBy(tag => $"{tag.Name}|{tag.Type}", StringComparer.OrdinalIgnoreCase).Any(group => group.Count() > 1))
-        {
-            _logger.LogWarning("Artwork create request contains duplicate new tags.");
-            return null;
-        }
-
-        var existingSeriesCount = existingTags.Count(t => t.Type == TagType.Series);
-        var newSeriesCount = normalizedNewTags.Count(tag => tag.Type.Equals(TagType.Series.ToString(), StringComparison.OrdinalIgnoreCase));
-        if (existingSeriesCount + newSeriesCount > 1)
-        {
-            _logger.LogWarning("Artwork create request contains more than one series tag.");
-            return null;
-        }
-
-        var newTagSearchNames = normalizedNewTags.Select(tag => tag.Name.ToLowerInvariant()).Distinct().ToArray();
-        var matchingExistingTags = await _dbContext.Tags
-            .Where(tag => newTagSearchNames.Contains(tag.Name.ToLower()))
-            .ToListAsync();
-
-        foreach (var newTag in normalizedNewTags)
-        {
-            if (matchingExistingTags.Any(tag => tag.Type.ToString().Equals(newTag.Type, StringComparison.OrdinalIgnoreCase)
-                && tag.Name.Equals(newTag.Name, StringComparison.OrdinalIgnoreCase)))
+            foreach (var tagId in existingTagIds)
             {
-                _logger.LogWarning("Artwork create request contains a new tag that already exists: {TagName} ({TagType}).", newTag.Name, newTag.Type);
-                return null;
+                var tag = await _dbContext.Tags.FindAsync(tagId);
+                if (tag is not null)
+                {
+                    existingDbTags.Add(tag);
+                }
             }
         }
 
-        var parsedNewTags = new List<Tag>();
-        foreach (var newTag in normalizedNewTags)
-        {
-            if (!Enum.TryParse<TagType>(newTag.Type, true, out var parsedType) || (parsedType != TagType.None && parsedType != TagType.Series))
+        var newDbTags = request.NewTags?.Any() == true ? request.NewTags
+            .Select(t => new Tag
             {
-                _logger.LogWarning("Artwork create request contains an invalid tag type: {TagType}.", newTag.Type);
-                return null;
-            }
-
-            parsedNewTags.Add(new Tag
-            {
-                Name = newTag.Name,
-                Type = parsedType
-            });
-        }
+                Id = Guid.NewGuid(),
+                Name = t.Name.Trim(),
+                Type = Enum.Parse<TagType>(t.Type, true)
+            })
+            .ToList() : new List<Tag>();
 
         var artwork = request.ToEntity();
+
         _dbContext.Artworks.Add(artwork);
 
-        foreach (var tag in existingTags)
+        foreach (var existingDbTag in existingDbTags)
         {
             _dbContext.ArtworkTags.Add(new ArtworkTag
             {
                 Artwork = artwork,
-                Tag = tag
+                Tag = existingDbTag
             });
         }
 
-        foreach (var tag in parsedNewTags)
+        foreach (var newDbTag in newDbTags)
         {
-            _dbContext.Tags.Add(tag);
+            _dbContext.Tags.Add(newDbTag);
             _dbContext.ArtworkTags.Add(new ArtworkTag
             {
                 Artwork = artwork,
-                Tag = tag
+                Tag = newDbTag
             });
         }
 
@@ -121,25 +78,8 @@ public sealed class ArtworkService : IArtworkService
         {
             await _dbContext.SaveChangesAsync();
         }
-        catch (DbUpdateException ex)
-        {
-            _dbContext.Entry(artwork).State = EntityState.Detached;
-            foreach (var tag in parsedNewTags)
-            {
-                _dbContext.Entry(tag).State = EntityState.Detached;
-            }
-
-            _logger.LogError(ex, "Failed to save artwork with tags to database.");
-            return null;
-        }
         catch (Exception ex)
         {
-            _dbContext.Entry(artwork).State = EntityState.Detached;
-            foreach (var tag in parsedNewTags)
-            {
-                _dbContext.Entry(tag).State = EntityState.Detached;
-            }
-
             _logger.LogError(ex, "Unexpected error while creating artwork with tags.");
             return null;
         }
@@ -281,7 +221,7 @@ public sealed class ArtworkService : IArtworkService
             .ToListAsync();
     }
 
-    public async Task<PaginatedResult<ArtworkDto>> GetArtworksPageAsync(string? creatorId = null, bool? isActive = null, int pageNumber = 1, int pageSize = 10)
+    public async Task<PaginatedResult<ArtworkDto>> GetArtworksPageAsync(string? creatorId = null, bool? isActive = null, int pageNumber = 1, int pageSize = 10, IEnumerable<Guid>? tagIds = null)
     {
         if (pageNumber < 1)
         {
@@ -293,6 +233,8 @@ public sealed class ArtworkService : IArtworkService
             pageSize = 10;
         }
 
+        var filteredTagIds = tagIds?.Where(id => id != Guid.Empty).Distinct().ToArray() ?? Array.Empty<Guid>();
+
         IQueryable<Artwork> query = _dbContext.Artworks
             .AsNoTracking();
 
@@ -301,9 +243,19 @@ public sealed class ArtworkService : IArtworkService
             query = query.Where(a => a.CreatorId == creatorId);
         }
 
-        if (isActive.HasValue && isActive.Value)
+        if (isActive.HasValue)
         {
             query = query.Where(a => a.IsActive == isActive.Value);
+        }
+
+        if (filteredTagIds.Any())
+        {
+            foreach (var tagId in filteredTagIds)
+            {
+                var tid = tagId;
+                query = query.Where(a =>
+                    _dbContext.ArtworkTags.Any(at => at.ArtworkId == a.Id && at.TagId == tid));
+            }
         }
 
         var totalCount = await query.CountAsync();

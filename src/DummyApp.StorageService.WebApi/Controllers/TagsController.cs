@@ -24,4 +24,12 @@ public sealed class TagsController : ControllerBase
         var tags = await _tagService.GetTagsAsync();
         return Ok(tags);
     }
+
+    [HttpGet("filters")]
+    [ProducesResponseType(typeof(IEnumerable<TagDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<TagDto>>> GetTagsForActiveArtworks()
+    {
+        var tags = await _tagService.GetTagsForActiveArtworksAsync();
+        return Ok(tags);
+    }
 }
