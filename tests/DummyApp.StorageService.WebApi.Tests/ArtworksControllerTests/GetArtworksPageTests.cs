@@ -14,9 +14,9 @@ public sealed class GetArtworksPageTests
     {
         var expected = new PaginatedResult<ArtworkDto>(
             new[] { new ArtworkDto { Id = Guid.NewGuid(), Name = "Art 1" } },
-            pageNumber: 1,
-            pageSize: 10,
-            totalCount: 1);
+            1,
+            10,
+            1);
 
         var artworkService = new Mock<IArtworkService>();
         artworkService.Setup(x => x.GetArtworksPageAsync(null, null, 1, 10))
