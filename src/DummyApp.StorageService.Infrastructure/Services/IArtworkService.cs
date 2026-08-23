@@ -11,5 +11,5 @@ public interface IArtworkService
     Task<ArtworkDto?> UpdateArtworkIsActiveAsync(Guid id, bool isActive);
     Task<ArtworkDto?> GetArtworkByIdAsync(Guid id, bool activeOnly = true);
     Task<IEnumerable<ArtworkDto>> GetArtworksAsync(string? creatorId = null, bool? isActive = null);
-    Task<PaginatedResult<ArtworkDto>> GetArtworksPageAsync(string? creatorId = null, bool? isActive = null, int pageNumber = 1, int pageSize = 10);
+    Task<PaginatedResult<ArtworkDto>> GetArtworksPageAsync(string? creatorId = null, bool? isActive = null, int pageNumber = 1, int pageSize = 10, IEnumerable<Guid>? tagIds = null);
 }
