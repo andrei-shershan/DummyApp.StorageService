@@ -1,5 +1,4 @@
 using System.Linq;
-using System.Linq.Expressions;
 using DummyApp.StorageService.Data;
 using DummyApp.StorageService.Data.Models;
 using DummyApp.StorageService.Infrastructure.Mappings;
@@ -38,7 +37,7 @@ public sealed class ArtworkService : IArtworkService
         }
 
         var existingTags = existingTagIds.Length > 0
-            ? await _dbContext.Tags.Where(BuildTagIdPredicate(existingTagIds)).ToListAsync()
+            ? await _dbContext.Tags.Where(t => existingTagIds.Contains(t.Id)).ToListAsync()
             : new List<Tag>();
 
         if (existingTagIds.Length != existingTags.Count)
@@ -65,16 +64,10 @@ public sealed class ArtworkService : IArtworkService
             return null;
         }
 
-        var newTagNames = normalizedNewTags
-            .Select(tag => tag.Name)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-
-        var matchingExistingTags = newTagNames.Length > 0
-            ? await _dbContext.Tags
-                .Where(BuildTagNamePredicate(newTagNames))
-                .ToListAsync()
-            : new List<Tag>();
+        var newTagSearchNames = normalizedNewTags.Select(tag => tag.Name.ToLowerInvariant()).Distinct().ToArray();
+        var matchingExistingTags = await _dbContext.Tags
+            .Where(tag => newTagSearchNames.Contains(tag.Name.ToLower()))
+            .ToListAsync();
 
         foreach (var newTag in normalizedNewTags)
         {
@@ -152,49 +145,6 @@ public sealed class ArtworkService : IArtworkService
         }
 
         return artwork.ToDto();
-    }
-
-    private static Expression<Func<Tag, bool>> BuildTagIdPredicate(IEnumerable<Guid> tagIds)
-    {
-        var ids = tagIds.ToArray();
-        if (ids.Length == 0)
-        {
-            return tag => false;
-        }
-
-        var parameter = Expression.Parameter(typeof(Tag), "tag");
-        var property = Expression.Property(parameter, nameof(Tag.Id));
-        Expression body = Expression.Equal(property, Expression.Constant(ids[0], typeof(Guid)));
-
-        for (var i = 1; i < ids.Length; i++)
-        {
-            body = Expression.OrElse(body,
-                Expression.Equal(property, Expression.Constant(ids[i], typeof(Guid))));
-        }
-
-        var idPredicate = Expression.Lambda<Func<Tag, bool>>(body, parameter);
-        return idPredicate;
-    }
-
-    private static Expression<Func<Tag, bool>> BuildTagNamePredicate(IEnumerable<string> tagNames)
-    {
-        var names = tagNames.ToArray();
-        if (names.Length == 0)
-        {
-            return tag => false;
-        }
-
-        var parameter = Expression.Parameter(typeof(Tag), "tag");
-        var property = Expression.Property(parameter, nameof(Tag.Name));
-        Expression body = Expression.Equal(property, Expression.Constant(names[0], typeof(string)));
-
-        for (var i = 1; i < names.Length; i++)
-        {
-            body = Expression.OrElse(body,
-                Expression.Equal(property, Expression.Constant(names[i], typeof(string))));
-        }
-
-        return Expression.Lambda<Func<Tag, bool>>(body, parameter);
     }
 
     public async Task<ArtworkDto?> GetArtworkByIdAsync(Guid id, bool activeOnly = true)
@@ -329,5 +279,42 @@ public sealed class ArtworkService : IArtworkService
         return await query
             .Select(a => a.ToDto())
             .ToListAsync();
+    }
+
+    public async Task<PaginatedResult<ArtworkDto>> GetArtworksPageAsync(string? creatorId = null, bool? isActive = null, int pageNumber = 1, int pageSize = 10)
+    {
+        if (pageNumber < 1)
+        {
+            pageNumber = 1;
+        }
+
+        if (pageSize < 1)
+        {
+            pageSize = 10;
+        }
+
+        IQueryable<Artwork> query = _dbContext.Artworks
+            .AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(creatorId))
+        {
+            query = query.Where(a => a.CreatorId == creatorId);
+        }
+
+        if (isActive.HasValue && isActive.Value)
+        {
+            query = query.Where(a => a.IsActive == isActive.Value);
+        }
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .OrderBy(a => a.UploadDate)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Select(a => a.ToDto())
+            .ToListAsync();
+
+        return new PaginatedResult<ArtworkDto>(items, pageNumber, pageSize, totalCount);
     }
 }
