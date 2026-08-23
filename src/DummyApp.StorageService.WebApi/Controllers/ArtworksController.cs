@@ -58,6 +58,14 @@ public class ArtworksController : ControllerBase
         return Ok(artworks ?? Array.Empty<ArtworkDto>());
     }
 
+    [HttpGet("page")]
+    [ProducesResponseType(typeof(PaginatedResult<ArtworkDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PaginatedResult<ArtworkDto>>> GetArtworksPage([FromQuery] string? creatorId, [FromQuery] bool? isActive, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+    {
+        var result = await _artworkService.GetArtworksPageAsync(creatorId, isActive, pageNumber, pageSize);
+        return Ok(result);
+    }
+
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(ArtworkDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
