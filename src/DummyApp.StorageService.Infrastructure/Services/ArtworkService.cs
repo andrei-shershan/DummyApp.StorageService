@@ -51,6 +51,25 @@ public sealed class ArtworkService : IArtworkService
             })
             .ToList() : new List<Tag>();
 
+        if (newDbTags.Any())
+        {
+            var allExistingTags = await _dbContext.Tags.ToListAsync();
+            if (newDbTags.Any(newTag => allExistingTags
+                    .Any(existingTag => string.Equals(existingTag.Name, newTag.Name, StringComparison.OrdinalIgnoreCase)
+                        && existingTag.Type == newTag.Type)))
+            {
+                _logger.LogWarning("Artwork create request contains a new tag that already exists");
+                return null;
+            }
+        }
+
+        var totalSeriesTags = existingDbTags.Count(t => t.Type == TagType.Series) + newDbTags.Count(t => t.Type == TagType.Series);
+        if (totalSeriesTags > 1)
+        {
+            _logger.LogWarning("Artwork create request contains more than one series tag.");
+            return null;
+        }
+
         var artwork = request.ToEntity();
 
         _dbContext.Artworks.Add(artwork);
