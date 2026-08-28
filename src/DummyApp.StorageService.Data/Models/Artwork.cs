@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace DummyApp.StorageService.Data.Models;
 
@@ -13,4 +14,6 @@ public sealed class Artwork
     public string ImgUrl { get; set; } = string.Empty;
     public string ThumbnailUrl { get; set; } = string.Empty;
     public bool IsActive { get; set; }
+
+    public ICollection<ArtworkTag> ArtworkTags { get; set; } = new List<ArtworkTag>();
 }

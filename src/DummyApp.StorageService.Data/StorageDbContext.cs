@@ -64,7 +64,7 @@ public sealed class StorageDbContext : DbContext
             entity.HasKey(at => new { at.ArtworkId, at.TagId });
 
             entity.HasOne(at => at.Artwork)
-                .WithMany()
+                .WithMany(a => a.ArtworkTags)
                 .HasForeignKey(at => at.ArtworkId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
