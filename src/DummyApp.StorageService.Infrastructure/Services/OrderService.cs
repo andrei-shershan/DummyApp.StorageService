@@ -187,6 +187,8 @@ public sealed class OrderService : IOrderService
             .AsNoTracking()
             .Where(i => i.OrderId == orderId)
             .Include(i => i.Artwork)
+                .ThenInclude(a => a.ArtworkTags)
+                    .ThenInclude(at => at.Tag)
             .Include(i => i.PrintSize)
             .Include(i => i.Price)
             .Select(orderItem => new OrderItemDto
@@ -201,7 +203,15 @@ public sealed class OrderService : IOrderService
                 PrintSizeId = orderItem.PrintSizeId,
                 PrintSizeName = orderItem.PrintSize != null ? orderItem.PrintSize.Name : string.Empty,
                 PriceId = orderItem.PriceId,
-                PriceValue = orderItem.PriceValue ?? (orderItem.Price != null ? orderItem.Price.Value : (decimal?)null)
+                PriceValue = orderItem.PriceValue ?? (orderItem.Price != null ? orderItem.Price.Value : (decimal?)null),
+                Tags = orderItem.Artwork.ArtworkTags
+                    .Select(at => new TagDto
+                    {
+                        Id = at.Tag!.Id,
+                        Name = at.Tag.Name,
+                        Type = at.Tag.Type.ToString()
+                    })
+                    .ToList()
             })
             .ToListAsync();
 
@@ -226,6 +236,8 @@ public sealed class OrderService : IOrderService
             .AsNoTracking()
             .Where(i => i.OrderId == orderId)
             .Include(i => i.Artwork)
+                .ThenInclude(a => a.ArtworkTags)
+                    .ThenInclude(at => at.Tag)
             .Include(i => i.PrintSize)
             .Include(i => i.Price)
             .Select(orderItem => new OrderItemDto
@@ -240,7 +252,15 @@ public sealed class OrderService : IOrderService
                 PrintSizeId = orderItem.PrintSizeId,
                 PrintSizeName = orderItem.PrintSize != null ? orderItem.PrintSize.Name : string.Empty,
                 PriceId = orderItem.PriceId,
-                PriceValue = orderItem.PriceValue ?? (orderItem.Price != null ? orderItem.Price.Value : (decimal?)null)
+                PriceValue = orderItem.PriceValue ?? (orderItem.Price != null ? orderItem.Price.Value : (decimal?)null),
+                Tags = orderItem.Artwork.ArtworkTags
+                    .Select(at => new TagDto
+                    {
+                        Id = at.Tag!.Id,
+                        Name = at.Tag.Name,
+                        Type = at.Tag.Type.ToString()
+                    })
+                    .ToList()
             })
             .ToListAsync();
 
@@ -280,6 +300,8 @@ public sealed class OrderService : IOrderService
             .Include(o => o.Address)
             .Include(o => o.Items)
                 .ThenInclude(i => i.Artwork)
+                    .ThenInclude(a => a.ArtworkTags)
+                        .ThenInclude(at => at.Tag)
             .Include(o => o.Items)
                 .ThenInclude(i => i.PrintSize)
             .Include(o => o.Items)
@@ -322,7 +344,15 @@ public sealed class OrderService : IOrderService
                     PrintSizeId = orderItem.PrintSizeId,
                     PrintSizeName = orderItem.PrintSize != null ? orderItem.PrintSize.Name : string.Empty,
                     PriceId = orderItem.PriceId,
-                    PriceValue = orderItem.PriceValue ?? (orderItem.Price != null ? orderItem.Price.Value : (decimal?)null)
+                    PriceValue = orderItem.PriceValue ?? (orderItem.Price != null ? orderItem.Price.Value : (decimal?)null),
+                    Tags = orderItem.Artwork!.ArtworkTags
+                        .Select(at => new TagDto
+                        {
+                            Id = at.Tag!.Id,
+                            Name = at.Tag.Name,
+                            Type = at.Tag.Type.ToString()
+                        })
+                        .ToList()
                 })
                 .ToList()
         }).ToList();
